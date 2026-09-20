@@ -1,0 +1,1813 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>无尽冬日 · 篝火营地</title>
+<style>
+  :root{
+    --night-0:#070f22; --night-1:#0a1830; --night-2:#102244; --night-3:#16305c;
+    --ice-0:#8cb4e7; --ice-1:#c9ddf6; --ice-2:#eaf3fd;
+    --fire-0:#ff5e3a; --fire-1:#ff9a3c; --fire-2:#ffc457;
+    --ink:#eaf3fd; --ink-dim:#9db4d8;
+    --danger:#ff6b6b; --ok:#7ce0a3; --warn:#ffd166;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none;}
+  html,body{height:100%;background:#04070f;overflow:hidden;
+    font-family:-apple-system,"PingFang SC","Microsoft YaHei","Noto Sans SC",sans-serif;}
+  body{display:flex;align-items:center;justify-content:center;}
+
+  /* ===== 9:16 舞台 ===== */
+  #stage{position:relative;width:min(100vw, calc(100vh * 9 / 16));height:min(100vh, calc(100vw * 16 / 9));
+    background:var(--night-1);overflow:hidden;box-shadow:0 0 60px rgba(0,0,0,.8);}
+
+  /* ===== 顶部 HUD ===== */
+  #hud{position:absolute;top:0;left:0;right:0;z-index:20;padding:8px 10px 6px;
+    background:linear-gradient(180deg, rgba(7,15,34,.92), rgba(7,15,34,.55) 75%, transparent);}
+  #hud-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;}
+  #day-box{display:flex;align-items:baseline;gap:6px;}
+  #day-num{font-size:20px;font-weight:800;color:var(--ice-2);letter-spacing:1px;}
+  #day-label{font-size:11px;color:var(--ink-dim);}
+  #clock{font-size:11px;color:var(--ink-dim);font-variant-numeric:tabular-nums;}
+  /* 温度表 */
+  #temp-box{display:flex;align-items:center;gap:6px;background:rgba(16,34,68,.7);
+    border:1px solid rgba(140,180,231,.25);border-radius:20px;padding:3px 10px;}
+  #temp-val{font-size:15px;font-weight:800;font-variant-numeric:tabular-nums;}
+  #temp-bar-w{width:64px;height:6px;border-radius:3px;background:rgba(140,180,231,.18);overflow:hidden;}
+  #temp-bar{height:100%;border-radius:3px;transition:width .5s, background .5s;}
+  /* 资源栏 */
+  #res-bar{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;}
+  .res{display:flex;align-items:center;gap:4px;background:rgba(16,34,68,.62);
+    border:1px solid rgba(140,180,231,.16);border-radius:8px;padding:4px 6px;}
+  .res .ic{font-size:13px;line-height:1;}
+  .res .v{font-size:12px;font-weight:700;color:var(--ice-2);font-variant-numeric:tabular-nums;}
+  .res .d{font-size:9px;font-variant-numeric:tabular-nums;margin-left:auto;}
+  .d.up{color:var(--ok);} .d.down{color:var(--danger);} .d.flat{color:var(--ink-dim);}
+
+  /* ===== 事件横幅 ===== */
+  #banner{position:absolute;top:86px;left:50%;transform:translateX(-50%);z-index:25;
+    padding:6px 16px;border-radius:20px;font-size:12px;font-weight:700;letter-spacing:1px;
+    background:rgba(16,34,68,.9);border:1px solid rgba(140,180,231,.35);color:var(--ice-1);
+    opacity:0;transition:opacity .4s;pointer-events:none;white-space:nowrap;}
+  #banner.show{opacity:1;}
+  #banner.danger{background:rgba(80,18,24,.92);border-color:rgba(255,107,107,.5);color:#ffd9d9;
+    animation:bannerPulse 1s infinite;}
+  @keyframes bannerPulse{50%{transform:translateX(-50%) scale(1.04);}}
+
+  /* ===== 场景画布 ===== */
+  #scene{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:manipulation;}
+
+  /* ===== 底部标签栏 ===== */
+  #tabbar{position:absolute;bottom:0;left:0;right:0;z-index:30;display:grid;grid-template-columns:repeat(4,1fr);
+    background:linear-gradient(0deg, rgba(7,15,34,.96) 60%, rgba(7,15,34,.75));
+    border-top:1px solid rgba(140,180,231,.22);padding:6px 6px calc(6px + env(safe-area-inset-bottom));}
+  .tab{display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 0 4px;
+    border-radius:10px;color:var(--ink-dim);cursor:pointer;transition:.2s;}
+  .tab .ti{font-size:20px;line-height:1;filter:grayscale(.4) brightness(.8);transition:.2s;}
+  .tab .tl{font-size:10px;letter-spacing:2px;}
+  .tab .tb{font-size:9px;color:var(--ice-0);font-variant-numeric:tabular-nums;min-height:11px;}
+  .tab.active{color:var(--ice-2);background:rgba(140,180,231,.12);}
+  .tab.active .ti{filter:none;transform:translateY(-2px);}
+
+  /* ===== 底部面板 ===== */
+  #panel{position:absolute;left:0;right:0;bottom:0;z-index:40;height:52%;
+    background:linear-gradient(180deg,#0d1c3a,#081226);
+    border-top:1px solid rgba(140,180,231,.35);border-radius:18px 18px 0 0;
+    transform:translateY(105%);transition:transform .32s cubic-bezier(.2,.9,.25,1);
+    display:flex;flex-direction:column;box-shadow:0 -12px 40px rgba(0,0,0,.5);}
+  #panel.open{transform:translateY(0);}
+  #panel-head{display:flex;align-items:center;justify-content:space-between;
+    padding:12px 16px 8px;border-bottom:1px solid rgba(140,180,231,.14);}
+  #panel-title{font-size:15px;font-weight:800;color:var(--ice-2);letter-spacing:2px;}
+  #panel-close, #lb-close{width:28px;height:28px;border-radius:50%;border:1px solid rgba(140,180,231,.3);
+    background:none;color:var(--ink-dim);font-size:14px;cursor:pointer;}
+  #panel-body{flex:1;overflow-y:auto;padding:10px 14px calc(14px + env(safe-area-inset-bottom));
+    -webkit-overflow-scrolling:touch;}
+  #panel-body::-webkit-scrollbar{width:3px;}
+  #panel-body::-webkit-scrollbar-thumb{background:rgba(140,180,231,.3);border-radius:2px;}
+
+  /* 通用卡片与按钮 */
+  .card{background:rgba(16,34,68,.55);border:1px solid rgba(140,180,231,.16);
+    border-radius:12px;padding:10px 12px;margin-bottom:8px;}
+  .card-row{display:flex;align-items:center;gap:10px;}
+  .card-ic{font-size:24px;width:38px;height:38px;display:flex;align-items:center;justify-content:center;
+    background:rgba(140,180,231,.1);border-radius:10px;flex-shrink:0;}
+  .card-main{flex:1;min-width:0;}
+  .card-name{font-size:13px;font-weight:700;color:var(--ice-2);}
+  .card-name .lv{font-size:10px;color:var(--fire-2);margin-left:5px;font-weight:600;}
+  .card-desc{font-size:10px;color:var(--ink-dim);margin-top:2px;line-height:1.5;}
+  .btn{border:none;border-radius:9px;padding:7px 12px;font-size:11px;font-weight:700;
+    font-family:inherit;cursor:pointer;transition:.15s;letter-spacing:1px;white-space:nowrap;}
+  .btn:active{transform:scale(.94);}
+  .btn-fire{background:linear-gradient(135deg,var(--fire-1),var(--fire-0));color:#fff;
+    box-shadow:0 3px 12px rgba(255,94,58,.35);}
+  .btn-ice{background:rgba(140,180,231,.18);color:var(--ice-1);border:1px solid rgba(140,180,231,.35);}
+  .btn-ghost{background:none;color:var(--ink-dim);border:1px solid rgba(140,180,231,.2);}
+  .btn:disabled{opacity:.35;filter:grayscale(.6);pointer-events:none;}
+  .cost{font-size:9px;color:var(--ink-dim);margin-top:3px;font-variant-numeric:tabular-nums;}
+  .cost .lack{color:var(--danger);}
+  .stepper{display:flex;align-items:center;gap:8px;}
+  .stepper button{width:26px;height:26px;border-radius:8px;border:1px solid rgba(140,180,231,.35);
+    background:rgba(140,180,231,.12);color:var(--ice-1);font-size:15px;font-weight:800;cursor:pointer;}
+  .stepper button:active{transform:scale(.9);}
+  .stepper .n{font-size:15px;font-weight:800;color:var(--ice-2);min-width:22px;text-align:center;
+    font-variant-numeric:tabular-nums;}
+  .sec-title{font-size:11px;color:var(--ice-0);letter-spacing:3px;margin:12px 2px 7px;font-weight:700;}
+  .chip{display:inline-flex;align-items:center;gap:3px;font-size:9px;padding:2px 7px;border-radius:10px;
+    background:rgba(140,180,231,.12);color:var(--ice-1);margin:2px 3px 2px 0;}
+  .chip.bad{background:rgba(255,107,107,.15);color:#ffb3b3;}
+  .chip.good{background:rgba(124,224,163,.12);color:#b6f0cd;}
+  .prog{height:5px;border-radius:3px;background:rgba(140,180,231,.15);overflow:hidden;margin-top:5px;}
+  .prog>i{display:block;height:100%;border-radius:3px;background:linear-gradient(90deg,var(--fire-1),var(--fire-2));}
+
+  /* ===== 全屏遮罩（开场/结局） ===== */
+  #overlay{position:absolute;inset:0;z-index:100;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;text-align:center;padding:30px;
+    background:radial-gradient(ellipse at 50% 65%, rgba(16,48,92,.96), rgba(4,7,15,.99));}
+  #overlay.hidden{display:none;}
+  #ov-title{font-size:34px;font-weight:900;color:var(--ice-2);letter-spacing:8px;margin-bottom:6px;
+    text-shadow:0 0 30px rgba(140,180,231,.5);}
+  #ov-sub{font-size:12px;color:var(--fire-2);letter-spacing:4px;margin-bottom:26px;}
+  #ov-text{font-size:12px;color:var(--ink-dim);line-height:2;margin-bottom:30px;max-width:300px;text-align:left;}
+  #ov-text b{color:var(--ice-1);}
+  #ov-btn{font-size:15px;padding:13px 52px;letter-spacing:6px;}
+  #ov-score{font-size:13px;color:var(--warn);margin-bottom:24px;letter-spacing:1px;}
+
+  /*  toast  */
+  #toasts{position:absolute;top:130px;left:0;right:0;z-index:60;display:flex;flex-direction:column;
+    align-items:center;gap:5px;pointer-events:none;}
+  .toast{font-size:11px;padding:5px 14px;border-radius:14px;background:rgba(7,15,34,.88);
+    border:1px solid rgba(140,180,231,.3);color:var(--ice-1);animation:toastIn .3s, toastOut .4s 2.4s forwards;}
+  .toast.bad{border-color:rgba(255,107,107,.5);color:#ffc9c9;}
+  .toast.good{border-color:rgba(124,224,163,.45);color:#c9f5da;}
+  @keyframes toastIn{from{opacity:0;transform:translateY(-8px);}}
+  @keyframes toastOut{to{opacity:0;transform:translateY(-6px);}}
+
+  /* ===== 小游戏顶栏 ===== */
+  #mgbar{position:absolute;top:0;left:0;right:0;z-index:50;display:none;
+    align-items:center;justify-content:space-between;padding:10px 12px;
+    background:linear-gradient(180deg, rgba(7,15,34,.9), transparent);}
+  #mgbar.show{display:flex;}
+  #mg-title{font-size:14px;font-weight:800;color:var(--ice-2);letter-spacing:2px;}
+  #mg-info{font-size:12px;color:var(--warn);font-variant-numeric:tabular-nums;font-weight:700;}
+  #mg-exit{border:1px solid rgba(255,107,107,.5);background:rgba(80,18,24,.6);color:#ffc9c9;
+    border-radius:16px;padding:4px 12px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;}
+
+  /* ===== 娱乐面板 / 排行榜 ===== */
+  .mg-card{display:flex;align-items:center;gap:10px;background:rgba(16,34,68,.55);
+    border:1px solid rgba(140,180,231,.16);border-radius:12px;padding:12px;margin-bottom:8px;}
+  .mg-ic{font-size:26px;width:46px;height:46px;display:flex;align-items:center;justify-content:center;
+    background:linear-gradient(135deg,rgba(255,154,60,.2),rgba(255,94,58,.12));
+    border:1px solid rgba(255,154,60,.3);border-radius:12px;flex-shrink:0;}
+  .lb-row{display:flex;align-items:center;gap:8px;padding:7px 4px;font-size:12px;color:var(--ice-1);
+    border-bottom:1px solid rgba(140,180,231,.08);}
+  .lb-rank{width:22px;text-align:center;font-weight:800;color:var(--warn);}
+  .lb-days{margin-left:auto;font-weight:700;color:var(--fire-2);font-variant-numeric:tabular-nums;}
+  #ov-btns{display:flex;gap:10px;margin-top:12px;}
+  .btn-sm{padding:9px 18px;font-size:12px;letter-spacing:2px;}
+
+  /* ===== 排行榜弹窗 ===== */
+  #lb-modal{position:absolute;inset:0;z-index:90;display:none;align-items:center;justify-content:center;
+    background:rgba(4,7,15,.75);}
+  #lb-modal.show{display:flex;}
+  #lb-box{width:82%;max-height:70%;background:linear-gradient(180deg,#0d1c3a,#081226);
+    border:1px solid rgba(140,180,231,.35);border-radius:16px;padding:16px;display:flex;flex-direction:column;}
+  #lb-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
+  #lb-title{font-size:15px;font-weight:800;color:var(--ice-2);letter-spacing:2px;}
+  #lb-list{overflow-y:auto;}
+  #lb-note{font-size:10px;color:var(--ink-dim);margin-top:10px;text-align:center;line-height:1.6;}
+</style>
+</head>
+<body>
+<div id="stage">
+  <canvas id="scene"></canvas>
+
+  <div id="hud">
+    <div id="hud-top">
+      <div id="day-box"><span id="day-num">第 1 天</span><span id="day-label">存活中</span></div>
+      <div id="temp-box">
+        <span style="font-size:12px">🌡️</span>
+        <span id="temp-val">20°</span>
+        <div id="temp-bar-w"><div id="temp-bar"></div></div>
+      </div>
+      <div id="clock">06:00</div>
+    </div>
+    <div id="res-bar">
+      <div class="res"><span class="ic">🪵</span><span class="v" id="r-wood">0</span><span class="d flat" id="d-wood"></span></div>
+      <div class="res"><span class="ic">🪨</span><span class="v" id="r-coal">0</span><span class="d flat" id="d-coal"></span></div>
+      <div class="res"><span class="ic">🍖</span><span class="v" id="r-food">0</span><span class="d flat" id="d-food"></span></div>
+      <div class="res"><span class="ic">⛏️</span><span class="v" id="r-iron">0</span><span class="d flat" id="d-iron"></span></div>
+    </div>
+  </div>
+
+  <div id="banner"></div>
+  <div id="toasts"></div>
+
+  <div id="tabbar" style="grid-template-columns:repeat(5,1fr)">
+    <div class="tab" data-tab="build"><span class="ti">🏗️</span><span class="tl">建筑</span><span class="tb" id="tb-build"></span></div>
+    <div class="tab" data-tab="people"><span class="ti">🧑‍🤝‍🧑</span><span class="tl">幸存者</span><span class="tb" id="tb-people"></span></div>
+    <div class="tab" data-tab="army"><span class="ti">⚔️</span><span class="tl">军队</span><span class="tb" id="tb-army"></span></div>
+    <div class="tab" data-tab="hunt"><span class="ti">⚔️</span><span class="tl">征战</span><span class="tb" id="tb-hunt"></span></div>
+    <div class="tab" data-tab="fun"><span class="ti">🎮</span><span class="tl">娱乐</span><span class="tb" id="tb-fun"></span></div>
+  </div>
+
+  <div id="mgbar">
+    <span id="mg-title">小游戏</span>
+    <span id="mg-info"></span>
+    <button id="mg-exit">✕ 退出</button>
+  </div>
+
+  <div id="lb-modal">
+    <div id="lb-box">
+      <div id="lb-head"><span id="lb-title">🏆 生存排行榜</span><button id="lb-close" onclick="document.getElementById('lb-modal').classList.remove('show')">✕</button></div>
+      <div id="lb-list"></div>
+      <div id="lb-note">微信小游戏环境内将自动切换为好友排行榜<br>（基于微信开放数据域）</div>
+    </div>
+  </div>
+
+  <div id="panel">
+    <div id="panel-head">
+      <div id="panel-title">建筑</div>
+      <button id="panel-close">✕</button>
+    </div>
+    <div id="panel-body"></div>
+  </div>
+
+  <div id="overlay">
+    <div id="ov-title">无尽冬日</div>
+    <div id="ov-sub">篝 火 营 地 · 生 存 实 录</div>
+    <div id="ov-text">
+      极寒末日，你是营地最后的火种。<br><br>
+      <b>🪵 维持熔炉</b>——燃料烧尽，所有人都会冻死<br>
+      <b>🧊 破冰救人</b>——点击冰面上的幸存者，救回营地分工<br>
+      <b>🏗️ 建造发展</b>——伐木、采矿、烹饪、医疗、科研<br>
+      <b>🏹 外出狩猎</b>——训练士兵，猎杀雪狼与猛犸获取食物<br>
+      <b>🌨️ 暴风雪</b>——来临前务必囤足燃料！
+    </div>
+    <div id="ov-score"></div>
+    <button class="btn btn-fire" id="ov-btn">点 燃 熔 炉</button>
+    <div id="ov-btns">
+      <button class="btn btn-ice btn-sm" id="ov-share">📤 分享战绩</button>
+      <button class="btn btn-ice btn-sm" id="ov-lb">🏆 排行榜</button>
+    </div>
+  </div>
+</div>
+<script>
+/* ============================================================
+   无尽冬日 · 篝火营地  —— 数据层（数值源自策划 JSON 配置）
+   ============================================================ */
+const DATA = {
+  // 熔炉等级（fuel/min 已按 tick=1游戏分钟 ÷10 缩放；煤=3燃料，木=1燃料）
+  furnace: [
+    {lv:1, fuel:1.0, maxTemp:20, cap:10, cost:null},
+    {lv:2, fuel:1.5, maxTemp:35, cap:20, cost:{wood:500, iron:100}},
+    {lv:3, fuel:2.0, maxTemp:50, cap:35, cost:{wood:1200,iron:300}},
+  ],
+  buildings: {
+    lumber:  {name:'伐木场', icon:'🪓', desc:'分配伐木工产出木材', levels:[
+      {out:{wood:8},  workers:3, cost:{wood:150, iron:0}},
+      {out:{wood:14}, workers:5, cost:{wood:400, iron:50}}]},
+    mine:    {name:'矿场', icon:'⛏️', desc:'分配矿工产出煤炭与铁矿', levels:[
+      {out:{coal:4, iron:2}, workers:3, cost:{wood:200, iron:0}},
+      {out:{coal:7, iron:4}, workers:5, cost:{wood:500, iron:100}}]},
+    kitchen: {name:'厨房', icon:'🍲', desc:'厨师烹饪食物，小幅提升幸福度', levels:[
+      {out:{food:6}, workers:2, cost:{wood:180, iron:0}}]},
+    dorm:    {name:'宿舍', icon:'🛖', desc:'幸存者容纳上限 +10', levels:[
+      {capAdd:10, cost:{wood:220, iron:30}}]},
+    hospital:{name:'医院', icon:'🏥', desc:'医生治疗冻伤与疾病', levels:[
+      {workers:2, cost:{wood:300, iron:80}}]},
+    lab:     {name:'科研所', icon:'🔬', desc:'解锁科技研发', levels:[
+      {cost:{wood:400, iron:120}}]},
+    barracks:{name:'兵营', icon:'🛡️', desc:'解锁士兵训练，容量 +50', levels:[
+      {soldierCap:50, cost:{wood:350, iron:150}}]},
+  },
+  jobs: {
+    lumber: {name:'伐木工', bonus:0.25, target:'lumber'},
+    mine:   {name:'矿工',   bonus:0.20, target:'mine'},
+    cook:   {name:'厨师',   bonus:0.30, target:'kitchen'},
+    medic:  {name:'医生',   bonus:0.40, target:'hospital'},
+    hunter: {name:'猎人',   bonus:0.30, target:null}, // 随队狩猎
+  },
+  specs: ['伐木','采矿','烹饪','医疗','狩猎'],
+  techs: [
+    {id:'t1', name:'高效伐木', desc:'木材产出 +12%', cost:{wood:600}, buff:'wood'},
+    {id:'t2', name:'燃料节约', desc:'熔炉燃料消耗 -8%', cost:{coal:300}, buff:'fuel'},
+    {id:'t3', name:'锋利武器', desc:'士兵攻击 +10%', cost:{iron:400}, buff:'atk'},
+    {id:'t4', name:'加固甲胄', desc:'士兵防御 +10%', cost:{iron:400}, buff:'def'},
+  ],
+  codex: [
+    {id:'c1', name:'生存法典·壹', cond:'熔炉 Lv2', check:s=>s.furnaceLv>=2, desc:'木材产出 +8%，幸福度上限 +5'},
+    {id:'c2', name:'战争法典·壹', cond:'拥有兵营', check:s=>s.built.barracks>0, desc:'士兵攻防 +6%'},
+    {id:'c3', name:'冻土法典',   cond:'拥有科研所', check:s=>s.built.lab>0, desc:'熔炉燃料消耗 -10%'},
+  ],
+  soldierTypes: {
+    shield: {name:'盾兵', icon:'🛡️', atk:80,  def:160, hp:1200, cost:{food:20, iron:10}},
+    archer: {name:'弓兵', icon:'🏹', atk:150, def:60,  hp:600,  cost:{food:15, iron:15}},
+  },
+  hero: {name:'凛冬守卫', icon:'🧊', atk:120, def:220, hp:2800, aura:'全军减伤 20%'},
+  monsters: [
+    {id:'wolf',   name:'雪狼群',   icon:'🐺', power:480,  minDay:1, march:8,
+     desc:'2~4 只雪狼游荡，猎杀可得大量食物', loot:{food:[80,140], wood:[20,50]}, heroExp:20},
+    {id:'mammoth',name:'猛犸巨兽', icon:'🦣', power:1500, minDay:3, march:14,
+     desc:'冰原霸主，需集结重兵，掉落极为丰厚', loot:{food:[260,380], iron:[80,140]}, heroExp:80},
+  ],
+  names: ['阿岩','小满','老周','石头','杏儿','铁柱','阿雪','大川','月牙','柱子','翠花','阿宝','冬至','小米','石头哥','杏子','北川','阿福','苗苗','大锤'],
+  // 掠夺 PVE：NPC 营地
+  raids: [
+    {id:'r1', name:'雪原哨站', icon:'🏕️', power:900,  cd:60,  minDay:1,
+     desc:'流民据点，守备松懈，适合初掠夺', loot:{wood:[200,350], food:[60,100]}},
+    {id:'r2', name:'冻土堡垒', icon:'🏰', power:2800, cd:90,  minDay:2,
+     desc:'武装营地，囤积大量燃料与铁矿', loot:{coal:[200,320], iron:[100,180]}},
+    {id:'r3', name:'寒冰王庭', icon:'🧊', power:6500, cd:120, minDay:4,
+     desc:'冰原霸主的宝库，防守森严，富得流油', loot:{iron:[300,500], food:[300,450], coal:[200,300]}},
+  ],
+};
+
+/* ============ 游戏状态 ============ */
+const TICK_MS = 1000;          // 1 tick = 1 游戏分钟 = 1 秒
+const DAY_TICKS = 60;          // 60 tick = 1 天
+let S = null;                  // 游戏状态
+let raf = null, tickTimer = null;
+
+function newGame(){
+  S = {
+    running:true, tick:0, day:1,
+    res:{wood:300, coal:80, food:260, iron:60},
+    furnaceLv:1, temp:20, outside:-15, burning:true, fuelRatio:1, starving:0,
+    built:{lumber:0, mine:0, kitchen:0, dorm:0, hospital:0, lab:0, barracks:0},
+    survivors:[], nextSid:1,
+    soldiers:{shield:0, archer:0},
+    hero:{lv:1, exp:0},
+    techs:[], codex:[],
+    weather:{phase:'calm', t:0, cycle:0, mod:0, fuelMult:1, name:''}, // calm→warn→storm
+    hunt:null,           // {monsterId, tTotal, tLeft, log:[]}
+    raidCd:{r1:0, r2:0, r3:0},  // 掠夺冷却
+    paused:false,        // 小游戏进行时暂停主循环
+    frozen:null,         // 待救援者 {x,y,tLeft}
+    stats:{rescued:0, hunts:0, kills:0, dead:0},
+    resDelta:{wood:0, coal:0, food:0, iron:0}, // 每分钟净产量（HUD 显示）
+  };
+  // 初始 4 名幸存者
+  for(let i=0;i<4;i++) addSurvivor(true);
+  S.survivors[0].job='lumber'; S.survivors[1].job='lumber'; S.survivors[2].job='cook';
+}
+
+function addSurvivor(silent){
+  const s = {
+    id:S.nextSid++,
+    name:DATA.names[(S.nextSid*7+3)%DATA.names.length] + S.nextSid,
+    spec:DATA.specs[Math.floor(Math.random()*DATA.specs.length)],
+    job:'idle', status:'healthy',   // healthy / frostbite / sick
+    statusT:0,                       // 患病持续 tick
+    x:0.5, y:0.72, tx:0.5, ty:0.72,  // 画布归一化坐标
+    walkT:Math.random()*4,
+  };
+  S.survivors.push(s);
+  if(!silent) toast(`🧊 ${s.name} 加入了营地（特长：${s.spec}）`, 'good');
+  return s;
+}
+
+/* ============ 派生计算 ============ */
+const cap = () => DATA.furnace[S.furnaceLv-1].cap + (S.built.dorm>0 ? 10 : 0);
+const soldierCap = () => 10 + (S.built.barracks>0 ? 50 : 0);
+const soldiersTotal = () => S.soldiers.shield + S.soldiers.archer;
+const aliveCount = () => S.survivors.length;
+const jobCount = j => S.survivors.filter(s=>s.job===j).length;
+const hasCodex = id => S.codex.includes(id);
+const hasTech = id => S.techs.includes(id);
+
+function workerSlots(job){
+  const b = DATA.jobs[job].target;
+  if(!b) return 99; // 猎人无建筑限制
+  const lv = S.built[b];
+  if(lv<=0) return 0;
+  return DATA.buildings[b].levels[lv-1].workers || 0;
+}
+
+// 幸存者效率：特长匹配 × debuff × 幸福度
+function efficiency(s){
+  let e = 1;
+  const specMap = {lumber:'伐木', mine:'采矿', cook:'烹饪', medic:'医疗', hunter:'狩猎'};
+  if(specMap[s.job] === s.spec) e *= 1.25;
+  if(s.status === 'frostbite') e *= 0.5;
+  if(s.status === 'sick') e *= 0.6;
+  if(happiness() < 40) e *= 0.7;
+  return e;
+}
+
+function happiness(){
+  // 简化全局幸福度：食物充足 80，厨房加成，饥饿则崩落
+  let h = S._happy ?? 80;
+  return Math.max(0, Math.min(hasCodex('c1') ? 105 : 100, h));
+}
+
+function armyPower(){
+  const atkB = (hasTech('t3')?1.1:1) * (hasCodex('c2')?1.06:1);
+  const defB = (hasTech('t4')?1.1:1) * (hasCodex('c2')?1.06:1);
+  let p = 0;
+  for(const k of ['shield','archer']){
+    const t = DATA.soldierTypes[k], n = S.soldiers[k];
+    p += n * (t.atk*atkB + t.def*0.5*defB + t.hp*0.05);
+  }
+  // 英雄：基础战力 + 等级成长 + 减伤光环折算
+  const h = DATA.hero, lv = S.hero.lv;
+  p += (h.atk + h.def*0.5 + h.hp*0.05) * (1 + 0.08*(lv-1));
+  p *= 1.15; // 坚冰护甲光环
+  return Math.round(p);
+}
+
+/* ============================================================
+   核心循环：每 tick（1 游戏分钟）
+   ============================================================ */
+function gameTick(){
+  if(!S || !S.running || S.paused) return;
+  S.tick++;
+  for(const k in S.raidCd) if(S.raidCd[k]>0) S.raidCd[k]--;
+  if(S.tick % DAY_TICKS === 0){
+    S.day++;
+    toast(`☀️ 第 ${S.day} 天，营地仍在燃烧`, 'good');
+  }
+
+  const delta = {wood:0, coal:0, food:0, iron:0};
+
+  /* ---- 1. 熔炉燃料与温度 ---- */
+  const fCfg = DATA.furnace[S.furnaceLv-1];
+  let fuelNeed = fCfg.fuel * S.weather.fuelMult;
+  if(hasTech('t2')) fuelNeed *= 0.92;
+  if(hasCodex('c3')) fuelNeed *= 0.90;
+  // 自动燃料：先烧木（1），不足烧煤（3）
+  let burning = true;
+  let need = fuelNeed;
+  const woodUse = Math.min(S.res.wood, need);
+  S.res.wood -= woodUse; need -= woodUse; delta.wood -= woodUse;
+  if(need > 0){
+    const coalUse = Math.min(S.res.coal, need/3);
+    S.res.coal -= coalUse; need -= coalUse*3; delta.coal -= coalUse;
+  }
+  if(need > fuelNeed*0.5) burning = false; // 燃料严重不足
+  S.burning = burning;
+  S.fuelRatio = 1 - Math.max(0, need)/fuelNeed;
+
+  const targetTemp = burning ? fCfg.maxTemp + S.weather.mod : S.outside + S.weather.mod;
+  S.temp += (targetTemp - S.temp) * 0.08; // 温度渐变
+
+  /* ---- 2. 资源产出 ---- */
+  const woodB = (hasTech('t1')?1.12:1) * (hasCodex('c1')?1.08:1);
+  for(const s of S.survivors){
+    if(s.job==='idle' || s.job==='hunter' || s.job==='medic') continue;
+    const bKey = DATA.jobs[s.job].target;
+    const lv = S.built[bKey]; if(lv<=0) continue;
+    const out = DATA.buildings[bKey].levels[lv-1].out;
+    if(!out) continue;
+    const e = efficiency(s);
+    for(const r in out){
+      let v = out[r] * e;
+      if(r==='wood') v *= woodB;
+      S.res[r] += v; delta[r] += v;
+    }
+  }
+
+  /* ---- 3. 食物消耗与幸福度 ---- */
+  const eatNeed = S.survivors.length * 0.55;
+  if(S.res.food >= eatNeed){
+    S.res.food -= eatNeed; delta.food -= eatNeed;
+    S._happy = Math.min(105, (S._happy??80) + 0.4 + (S.built.kitchen>0?0.15:0));
+    S.starving = 0;
+  }else{
+    delta.food -= S.res.food; S.res.food = 0;
+    S._happy = Math.max(0, (S._happy??80) - 2.2);
+    S.starving = (S.starving||0) + 1;
+  }
+
+  /* ---- 4. 冻伤 / 疾病 / 治疗 / 死亡 ---- */
+  const cold = S.temp <= 0;
+  const frostChance = cold ? (S.weather.phase==='storm' && S.weather.severe ? 0.06 : 0.03) : 0;
+  for(const s of S.survivors){
+    if(s.status==='healthy'){
+      if(Math.random() < frostChance){ s.status='frostbite'; s.statusT=0; toast(`🥶 ${s.name} 冻伤了！`, 'bad'); }
+      else if(S.weather.phase==='storm' && Math.random()<0.008){ s.status='sick'; s.statusT=0; toast(`🤒 ${s.name} 病倒了`, 'bad'); }
+    }else{
+      s.statusT++;
+      // 医生治疗
+      const medics = S.survivors.filter(m=>m.job==='medic' && m.status==='healthy').length;
+      if(S.built.hospital>0 && medics>0 && Math.random() < 0.10*medics*(1+0.4)){
+        s.status='healthy'; s.statusT=0; toast(`💊 ${s.name} 康复了`, 'good'); continue;
+      }
+      // 自愈（低温下冻伤不自愈）
+      if(!(s.status==='frostbite' && cold) && s.statusT > 40 && Math.random()<0.05){
+        s.status='healthy'; s.statusT=0;
+      }
+      // 死亡判定：冻伤+持续低温，或长期饥饿
+      const deathRisk = (s.status==='frostbite' && cold ? 0.012 : 0) + ((S.starving||0)>20 ? 0.008 : 0);
+      if(Math.random() < deathRisk){
+        s.dead = true; S.stats.dead++;
+        toast(`💀 ${s.name} 没能撑过去……`, 'bad');
+      }
+    }
+  }
+  S.survivors = S.survivors.filter(s=>!s.dead);
+  if(S.survivors.length===0){ gameOver(); return; }
+
+  /* ---- 5. 暴风雪循环 ---- */
+  tickWeather();
+
+  /* ---- 6. 冰封救援刷新 ---- */
+  if(!S.frozen && S.survivors.length < cap() && S.tick>15 && Math.random()<0.05){
+    S.frozen = {x:0.12+Math.random()*0.76, y:0.60+Math.random()*0.16, tLeft:30};
+    toast('🧊 冰面上发现被冻住的幸存者！点击救援', 'good');
+  }
+  if(S.frozen && --S.frozen.tLeft<=0){
+    S.frozen = null; toast('🌊 冰面上的幸存者沉入了冰层……', 'bad');
+  }
+
+  /* ---- 7. 狩猎行军 ---- */
+  if(S.hunt) tickHunt();
+
+  /* ---- 8. 法典解锁检查 ---- */
+  for(const c of DATA.codex){
+    if(!hasCodex(c.id) && c.check(S)){
+      S.codex.push(c.id);
+      toast(`📜 法典解锁【${c.name}】${c.desc}`, 'good');
+    }
+  }
+
+  /* ---- 9. HUD 净产量（滑动平均） ---- */
+  for(const r in delta) S.resDelta[r] = S.resDelta[r]*0.85 + delta[r]*0.15;
+  for(const r in S.res) S.res[r] = Math.max(0, Math.min(99999, S.res[r]));
+
+  updateHUD();
+  if(panelTab) renderPanel();
+}
+
+/* ---- 暴风雪状态机 ---- */
+function tickWeather(){
+  const w = S.weather;
+  w.t++;
+  if(w.phase==='calm' && w.t>=45){
+    w.phase='warn'; w.t=0;
+    w.severe = (w.cycle%3===2);
+    showBanner(w.severe ? '🌨️ 极寒风暴即将来临！囤足燃料！' : '🌨️ 暴风雪即将来临，注意燃料储备', true);
+  }else if(w.phase==='warn' && w.t>=10){
+    w.phase='storm'; w.t=0; w.cycle++;
+    w.mod = (w.severe ? -30 : -15) - Math.min(45, S.day*3); // 天数越深风雪越狠，终将超越熔炉极限
+    w.fuelMult = w.severe ? 1.5 : 1.2;
+    w.dur = w.severe ? 26 : 18;
+    showBanner(w.severe ? '❄️ 极寒风暴肆虐中！温度暴跌！' : '❄️ 暴风雪来袭！', true);
+  }else if(w.phase==='storm' && w.t>=w.dur){
+    w.phase='calm'; w.t=0; w.mod=0; w.fuelMult=1;
+    hideBanner();
+    toast('🌤️ 风雪停了，营地幸存', 'good');
+  }
+}
+
+/* ---- 狩猎 ---- */
+function tickHunt(){
+  const h = S.hunt;
+  h.tLeft--;
+  if(h.tLeft>0) return;
+  if(h.phase==='march'){ h.phase='battle'; resolveBattle(h); }
+  else { // 返程结束
+    const loot = h.loot;
+    for(const r in loot){ S.res[r]+=loot[r]; }
+    if(h.win){
+      const hunters = jobCount('hunter');
+      if(hunters>0 && loot.food){
+        const extra = Math.round(loot.food * 0.3 * Math.min(hunters,2));
+        S.res.food += extra; loot.food += extra;
+      }
+      toast(`🏹 狩猎归来！获得 ${fmtLoot(loot)}`, 'good');
+    }else{
+      toast(`💔 狩猎队败退归来……`, 'bad');
+    }
+    S.hunt = null;
+  }
+}
+
+function resolveBattle(h){
+  const m = DATA.monsters.find(x=>x.id===h.monsterId);
+  const my = armyPower() * (0.9 + Math.random()*0.2);
+  const enemy = m.power * (0.9 + Math.random()*0.2);
+  h.win = my >= enemy;
+  // 战损
+  const lossRate = h.win ? Math.min(0.3, enemy/my*0.25) : Math.min(0.6, 0.35+enemy/my*0.2);
+  const lostShield = Math.min(S.soldiers.shield, Math.round(S.soldiers.shield*lossRate*(h.win?1:1.3)));
+  const lostArcher = Math.min(S.soldiers.archer, Math.round(S.soldiers.archer*lossRate));
+  S.soldiers.shield -= lostShield; S.soldiers.archer -= lostArcher;
+  h.loss = {shield:lostShield, archer:lostArcher};
+  if(h.win){
+    h.loot = {};
+    for(const r in m.loot){ const [a,b]=m.loot[r]; h.loot[r]=Math.round(a+Math.random()*(b-a)); }
+    S.hero.exp += m.heroExp;
+    S.stats.hunts++; S.stats.kills++;
+    // 英雄升级
+    const need = S.hero.lv*60;
+    if(S.hero.exp>=need){ S.hero.exp-=need; S.hero.lv++; toast(`⭐ 凛冬守卫升到 Lv${S.hero.lv}！`, 'good'); }
+  }else{
+    h.loot = {};
+  }
+  h.phase='return'; h.tLeft = Math.ceil(m.march/2);
+  const lossTxt = (lostShield+lostArcher)>0 ? `，折损 ${lostShield+lostArcher} 名士兵` : '，零战损';
+  toast(h.win ? `⚔️ 击杀${m.name}${lossTxt}！` : `⚔️ 不敌${m.name}${lossTxt}，撤退！`, h.win?'good':'bad');
+}
+
+function fmtLoot(loot){
+  const ic = {wood:'🪵', coal:'🪨', food:'🍖', iron:'⛏️'};
+  return Object.entries(loot).map(([r,v])=>`${ic[r]}${v}`).join(' ');
+}
+
+/* ---- 掠夺 PVE ---- */
+function raidCamp(raidId){
+  const camp = DATA.raids.find(x=>x.id===raidId);
+  if(S.raidCd[raidId]>0 || soldiersTotal()===0) return;
+  const my = armyPower() * (0.9 + Math.random()*0.2);
+  const enemy = camp.power * (0.9 + Math.random()*0.2);
+  const win = my >= enemy;
+  const lossRate = win ? Math.min(0.35, enemy/my*0.3) : Math.min(0.65, 0.4+enemy/my*0.25);
+  const lostShield = Math.min(S.soldiers.shield, Math.round(S.soldiers.shield*lossRate*(win?1:1.3)));
+  const lostArcher = Math.min(S.soldiers.archer, Math.round(S.soldiers.archer*lossRate));
+  S.soldiers.shield -= lostShield; S.soldiers.archer -= lostArcher;
+  S.raidCd[raidId] = camp.cd;
+  const lossTxt = (lostShield+lostArcher)>0 ? `，折损 ${lostShield+lostArcher} 名士兵` : '，零战损';
+  if(win){
+    const loot = {};
+    for(const r in camp.loot){ const [a,b]=camp.loot[r]; loot[r]=Math.round(a+Math.random()*(b-a)); S.res[r]+=loot[r]; }
+    S.hero.exp += 30;
+    const need = S.hero.lv*60;
+    if(S.hero.exp>=need){ S.hero.exp-=need; S.hero.lv++; toast(`⭐ 凛冬守卫升到 Lv${S.hero.lv}！`, 'good'); }
+    toast(`🔥 攻破${camp.name}！掠夺 ${fmtLoot(loot)}${lossTxt}`, 'good');
+  }else{
+    toast(`🛡️ ${camp.name}守军顽强，掠夺失败${lossTxt}`, 'bad');
+  }
+  updateHUD();
+}
+
+/* ============================================================
+   Canvas 场景渲染
+   ============================================================ */
+const cv = document.getElementById('scene');
+const ctx = cv.getContext('2d');
+let W=0, H=0, DPR=1;
+function resize(){
+  const r = document.getElementById('stage').getBoundingClientRect();
+  DPR = Math.min(2, window.devicePixelRatio||1);
+  W = r.width; H = r.height;
+  cv.width = W*DPR; cv.height = H*DPR;
+  ctx.setTransform(DPR,0,0,DPR,0,0);
+}
+window.addEventListener('resize', resize);
+
+// 建筑槽位（归一化坐标）
+const SLOTS = {
+  lumber:  {x:0.16, y:0.44}, mine:    {x:0.84, y:0.44},
+  kitchen: {x:0.14, y:0.62}, dorm:    {x:0.86, y:0.62},
+  hospital:{x:0.24, y:0.79}, lab:     {x:0.76, y:0.79},
+  barracks:{x:0.50, y:0.87},
+};
+const FURNACE = {x:0.5, y:0.55};
+
+// 粒子
+let snowP = [], fireP = [], smokeP = [];
+function initParticles(){
+  snowP = Array.from({length:70}, ()=>({
+    x:Math.random(), y:Math.random(), r:0.8+Math.random()*2,
+    vy:0.0006+Math.random()*0.0012, vx:(Math.random()-0.5)*0.0004, tw:Math.random()*6.28 }));
+  fireP = []; smokeP = [];
+}
+initParticles();
+
+// 星星（静态）
+const stars = Array.from({length:40}, ()=>({x:Math.random(), y:Math.random()*0.3, r:Math.random()*1.1+0.3, tw:Math.random()*6.28}));
+
+let tGlobal = 0;
+function draw(){
+  tGlobal += 0.016;
+  ctx.clearRect(0,0,W,H);
+  if(MG.active){ drawMGFrame(); requestAnimationFrame(draw); return; }
+  const storm = S && S.weather.phase==='storm';
+  const warn = S && S.weather.phase==='warn';
+
+  /* 天空 */
+  const sky = ctx.createLinearGradient(0,0,0,H);
+  sky.addColorStop(0,'#070f22'); sky.addColorStop(0.45,'#0d1f42'); sky.addColorStop(0.72,'#16305c');
+  ctx.fillStyle = sky; ctx.fillRect(0,0,W,H);
+
+  /* 星星 */
+  for(const st of stars){
+    const a = 0.3 + 0.5*Math.abs(Math.sin(tGlobal*0.7+st.tw));
+    ctx.fillStyle = `rgba(234,243,253,${storm?a*0.15:a})`;
+    ctx.beginPath(); ctx.arc(st.x*W, st.y*H, st.r, 0, 6.29); ctx.fill();
+  }
+
+  /* 月亮 */
+  ctx.fillStyle = 'rgba(201,221,246,.9)';
+  ctx.beginPath(); ctx.arc(W*0.82, H*0.12, 16, 0, 6.29); ctx.fill();
+  ctx.fillStyle = 'rgba(13,31,66,.9)';
+  ctx.beginPath(); ctx.arc(W*0.80, H*0.115, 14, 0, 6.29); ctx.fill();
+
+  /* 远山 */
+  ctx.fillStyle = '#12264d';
+  ctx.beginPath(); ctx.moveTo(0,H*0.38);
+  for(let i=0;i<=8;i++) ctx.lineTo(W*i/8, H*0.38 - Math.sin(i*2.1)*H*0.05 - (i%2)*H*0.03);
+  ctx.lineTo(W,H*0.42); ctx.lineTo(W,H*0.5); ctx.lineTo(0,H*0.5); ctx.closePath(); ctx.fill();
+
+  /* 雪地 */
+  const gnd = ctx.createLinearGradient(0,H*0.36,0,H);
+  gnd.addColorStop(0,'#a9c6ea'); gnd.addColorStop(0.25,'#c9ddf6'); gnd.addColorStop(1,'#eaf3fd');
+  ctx.fillStyle = gnd;
+  ctx.beginPath(); ctx.moveTo(0,H*0.40);
+  ctx.quadraticCurveTo(W*0.3,H*0.37,W*0.5,H*0.40);
+  ctx.quadraticCurveTo(W*0.75,H*0.43,W,H*0.40);
+  ctx.lineTo(W,H); ctx.lineTo(0,H); ctx.closePath(); ctx.fill();
+
+  if(!S){ requestAnimationFrame(draw); return; }
+
+  /* 建筑槽位与建筑 */
+  for(const key in SLOTS){
+    const sl = SLOTS[key], lv = S.built[key];
+    const bx = sl.x*W, by = sl.y*H;
+    if(lv>0) drawBuilding(key, lv, bx, by);
+    else drawSlot(key, bx, by);
+  }
+
+  /* 熔炉（核心） */
+  drawFurnace(FURNACE.x*W, FURNACE.y*H);
+
+  /* 幸存者小人 */
+  for(const s of S.survivors) drawSurvivor(s);
+
+  /* 冰封待救援者 */
+  if(S.frozen) drawFrozen(S.frozen);
+
+  /* 雪粒子 */
+  const density = storm ? 3 : warn ? 1.6 : 1;
+  ctx.fillStyle = 'rgba(234,243,253,.85)';
+  for(const p of snowP){
+    p.y += p.vy*density*(storm?2.2:1);
+    p.x += p.vx + (storm?0.004:0) + Math.sin(tGlobal+p.tw)*0.0003;
+    if(p.y>1){ p.y=-0.02; p.x=Math.random(); }
+    if(p.x>1) p.x=0;
+    const n = Math.ceil(density)-1;
+    for(let i=0;i<=n;i++){
+      const yy = p.y - i*0.13;
+      if(yy<-0.02) continue;
+      ctx.globalAlpha = storm ? 0.9/(i+1) : 0.85;
+      ctx.beginPath(); ctx.arc(p.x*W, yy*H, p.r, 0, 6.29); ctx.fill();
+    }
+  }
+  ctx.globalAlpha = 1;
+
+  /* 暴风雪雾罩 */
+  if(storm){
+    const fog = ctx.createLinearGradient(0,0,W,H*0.5);
+    fog.addColorStop(0,'rgba(201,221,246,.28)'); fog.addColorStop(1,'rgba(201,221,246,.03)');
+    ctx.fillStyle = fog; ctx.fillRect(0,0,W,H);
+  }
+
+  requestAnimationFrame(draw);
+}
+
+/* ---- 熔炉 ---- */
+function drawFurnace(fx, fy){
+  const lv = S.furnaceLv;
+  const burning = S.burning;
+  const ratio = S.fuelRatio ?? 1;
+
+  // 火光晕
+  if(burning){
+    const glowR = (70 + lv*22) * (0.6+0.4*ratio) * (1+0.05*Math.sin(tGlobal*6));
+    const g = ctx.createRadialGradient(fx,fy,4, fx,fy,glowR);
+    g.addColorStop(0,'rgba(255,154,60,.5)'); g.addColorStop(0.5,'rgba(255,94,58,.16)'); g.addColorStop(1,'rgba(255,94,58,0)');
+    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(fx,fy,glowR,0,6.29); ctx.fill();
+  }
+
+  // 石圈
+  ctx.fillStyle = '#5a6c8f';
+  ctx.beginPath(); ctx.ellipse(fx, fy+16, 34+lv*4, 12+lv*2, 0, 0, 6.29); ctx.fill();
+  ctx.fillStyle = '#46587a';
+  ctx.beginPath(); ctx.ellipse(fx, fy+13, 28+lv*3, 9+lv, 0, 0, 6.29); ctx.fill();
+
+  // 柴堆
+  ctx.strokeStyle = '#6b4a2f'; ctx.lineWidth = 5; ctx.lineCap='round';
+  ctx.beginPath(); ctx.moveTo(fx-14,fy+12); ctx.lineTo(fx+12,fy+2); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(fx+14,fy+12); ctx.lineTo(fx-12,fy+2); ctx.stroke();
+
+  // 火焰粒子
+  if(burning){
+    if(Math.random()<0.7*ratio+0.15){
+      fireP.push({x:fx+(Math.random()-0.5)*16, y:fy+6, vy:-(0.6+Math.random()*0.9)*(0.7+lv*0.2),
+        r:3+Math.random()*4+lv, life:1, hue:Math.random()});
+    }
+    if(Math.random()<0.12) smokeP.push({x:fx, y:fy-14, vy:-0.35, r:3, life:1});
+  }
+  for(let i=fireP.length-1;i>=0;i--){
+    const p = fireP[i]; p.y += p.vy; p.life -= 0.028; p.r *= 0.985;
+    if(p.life<=0){ fireP.splice(i,1); continue; }
+    const c = p.hue<0.35 ? `rgba(255,196,87,${p.life})` : p.hue<0.7 ? `rgba(255,154,60,${p.life})` : `rgba(255,94,58,${p.life*0.9})`;
+    ctx.fillStyle = c;
+    ctx.beginPath(); ctx.arc(p.x + Math.sin(tGlobal*8+p.y)*1.5, p.y, p.r*p.life, 0, 6.29); ctx.fill();
+  }
+  for(let i=smokeP.length-1;i>=0;i--){
+    const p = smokeP[i]; p.y += p.vy; p.life -= 0.012; p.r += 0.12;
+    if(p.life<=0){ smokeP.splice(i,1); continue; }
+    ctx.fillStyle = `rgba(120,140,170,${p.life*0.25})`;
+    ctx.beginPath(); ctx.arc(p.x+Math.sin(tGlobal*2+p.y*0.1)*4, p.y, p.r, 0, 6.29); ctx.fill();
+  }
+
+  // 熄熔炉提示
+  if(!burning){
+    ctx.fillStyle = 'rgba(255,107,107,.95)';
+    ctx.font = 'bold 13px sans-serif'; ctx.textAlign='center';
+    ctx.fillText('🔥 燃料不足！', fx, fy-34-2*Math.sin(tGlobal*4));
+  }
+
+  // 等级旗
+  ctx.fillStyle = 'rgba(7,15,34,.75)';
+  roundRect(fx-24, fy+26, 48, 15, 7); ctx.fill();
+  ctx.fillStyle = '#ffc457'; ctx.font = 'bold 9px sans-serif'; ctx.textAlign='center';
+  ctx.fillText(`熔炉 Lv${lv}`, fx, fy+37);
+}
+
+/* ---- 建筑 ---- */
+function drawBuilding(key, lv, bx, by){
+  const def = DATA.buildings[key];
+  // 屋体
+  ctx.fillStyle = '#3a4f78';
+  roundRect(bx-22, by-8, 44, 26, 4); ctx.fill();
+  // 雪屋顶
+  ctx.fillStyle = '#dcebfb';
+  ctx.beginPath(); ctx.moveTo(bx-26, by-6); ctx.lineTo(bx, by-24); ctx.lineTo(bx+26, by-6); ctx.closePath(); ctx.fill();
+  ctx.fillStyle = '#8cb4e7';
+  ctx.beginPath(); ctx.moveTo(bx-26, by-6); ctx.lineTo(bx, by-24); ctx.lineTo(bx+4, by-6); ctx.closePath(); ctx.fill();
+  // 门
+  ctx.fillStyle = '#22345a'; roundRect(bx-5, by+4, 10, 14, 3); ctx.fill();
+  // 图标
+  ctx.font = '13px sans-serif'; ctx.textAlign='center';
+  ctx.fillText(def.icon, bx, by-28);
+  // 名称+等级
+  ctx.fillStyle = 'rgba(7,15,34,.7)';
+  roundRect(bx-26, by+20, 52, 13, 6); ctx.fill();
+  ctx.fillStyle = '#eaf3fd'; ctx.font = '9px sans-serif';
+  ctx.fillText(`${def.name}${lv>1?' Lv'+lv:''}`, bx, by+30);
+  // 工作中的小亮点
+  const workers = Object.keys(DATA.jobs).find(j=>DATA.jobs[j].target===key);
+  if(workers && jobCount(workers)>0){
+    ctx.fillStyle = `rgba(124,224,163,${0.5+0.4*Math.sin(tGlobal*3)})`;
+    ctx.beginPath(); ctx.arc(bx+18, by-16, 3, 0, 6.29); ctx.fill();
+  }
+}
+
+function drawSlot(key, bx, by){
+  const def = DATA.buildings[key];
+  ctx.strokeStyle = 'rgba(140,180,231,.4)'; ctx.setLineDash([4,4]); ctx.lineWidth = 1.2;
+  roundRect(bx-20, by-14, 40, 32, 6); ctx.stroke(); ctx.setLineDash([]);
+  ctx.fillStyle = 'rgba(157,180,216,.55)'; ctx.font = '9px sans-serif'; ctx.textAlign='center';
+  ctx.fillText(def.icon+' '+def.name, bx, by+6);
+}
+
+/* ---- 幸存者小人 ---- */
+const PARKA = ['#e07856','#5e9bd6','#7cc4a0','#d6b45e','#b07cc4','#e08ca0'];
+function drawSurvivor(s){
+  // 游走逻辑
+  s.walkT -= 0.016;
+  if(s.walkT<=0){
+    s.walkT = 2+Math.random()*4;
+    const home = s.job!=='idle' && DATA.jobs[s.job] && DATA.jobs[s.job].target && S.built[DATA.jobs[s.job].target]>0
+      ? SLOTS[DATA.jobs[s.job].target] : FURNACE;
+    s.tx = home.x + (Math.random()-0.5)*0.1;
+    s.ty = home.y + 0.03 + Math.random()*0.05;
+  }
+  s.x += (s.tx-s.x)*0.02; s.y += (s.ty-s.y)*0.02;
+  const px = s.x*W, py = s.y*H;
+  const bob = Math.sin(tGlobal*6+s.id)*1.2;
+  const col = PARKA[s.id%PARKA.length];
+
+  // 影子
+  ctx.fillStyle = 'rgba(60,90,140,.25)';
+  ctx.beginPath(); ctx.ellipse(px, py+8, 6, 2.2, 0, 0, 6.29); ctx.fill();
+  // 身体（连帽大衣）
+  ctx.fillStyle = s.status==='healthy' ? col : '#8a97ad';
+  ctx.beginPath();
+  ctx.moveTo(px, py-9+bob*0.3);
+  ctx.quadraticCurveTo(px+6, py-7, px+5.5, py+7);
+  ctx.lineTo(px-5.5, py+7);
+  ctx.quadraticCurveTo(px-6, py-7, px, py-9+bob*0.3);
+  ctx.fill();
+  // 脸
+  ctx.fillStyle = '#f2d0b3';
+  ctx.beginPath(); ctx.arc(px, py-5+bob*0.3, 2.6, 0, 6.29); ctx.fill();
+  // 状态标记
+  if(s.status!=='healthy'){
+    ctx.font = '8px sans-serif'; ctx.textAlign='center';
+    ctx.fillText(s.status==='frostbite'?'🥶':'🤒', px+7, py-8);
+  }
+}
+
+/* ---- 冰封幸存者 ---- */
+function drawFrozen(f){
+  const px = f.x*W, py = f.y*H;
+  const pulse = 1 + 0.12*Math.sin(tGlobal*5);
+  // 提示圈
+  ctx.strokeStyle = `rgba(255,209,102,${0.5+0.4*Math.sin(tGlobal*5)})`;
+  ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.arc(px, py, 20*pulse, 0, 6.29); ctx.stroke();
+  // 冰块
+  ctx.fillStyle = 'rgba(140,180,231,.75)';
+  roundRect(px-11, py-16, 22, 30, 5); ctx.fill();
+  ctx.fillStyle = 'rgba(234,243,253,.5)';
+  roundRect(px-8, py-13, 8, 24, 3); ctx.fill();
+  // 里面的人影
+  ctx.fillStyle = 'rgba(60,90,140,.6)';
+  ctx.beginPath(); ctx.arc(px+2, py-6, 3.4, 0, 6.29); ctx.fill();
+  roundRect(px-1.5, py-3, 7, 12, 3); ctx.fill();
+  // 倒计时
+  ctx.fillStyle = '#ffd166'; ctx.font = 'bold 9px sans-serif'; ctx.textAlign='center';
+  ctx.fillText(`🧊 点击救援 ${f.tLeft}s`, px, py-24);
+}
+
+function roundRect(x,y,w,h,r){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r);
+  ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath();
+}
+
+/* ---- 画布点击：救援 + 打开建筑 ---- */
+cv.addEventListener('pointerdown', e=>{
+  if(!S || !S.running) return;
+  const r = cv.getBoundingClientRect();
+  const nx = (e.clientX-r.left)/r.width, ny = (e.clientY-r.top)/r.height;
+  if(MG.active){ mgPointer('down',nx,ny); return; }
+  // 救援
+  if(S.frozen){
+    const dx = nx-S.frozen.x, dy = ny-S.frozen.y;
+    if(dx*dx+dy*dy < 0.003){
+      if(S.survivors.length < cap()){
+        addSurvivor(); S.stats.rescued++; S.frozen = null;
+      }else toast('🛖 营地已满，升级熔炉或建造宿舍', 'bad');
+      return;
+    }
+  }
+  // 点熔炉 → 建筑面板
+  const dxf = nx-FURNACE.x, dyf = ny-FURNACE.y;
+  if(dxf*dxf+dyf*dyf < 0.006){ openPanel('build'); return; }
+  // 点建筑槽
+  for(const key in SLOTS){
+    const sl = SLOTS[key], dx = nx-sl.x, dy = ny-sl.y;
+    if(dx*dx+dy*dy < 0.003){ openPanel('build'); return; }
+  }
+});
+cv.addEventListener('pointermove', e=>{
+  if(!MG.active) return;
+  const r = cv.getBoundingClientRect();
+  mgPointer('move', (e.clientX-r.left)/r.width, (e.clientY-r.top)/r.height);
+});
+cv.addEventListener('pointerup', e=>{
+  if(!MG.active) return;
+  const r = cv.getBoundingClientRect();
+  mgPointer('up', (e.clientX-r.left)/r.width, (e.clientY-r.top)/r.height);
+});
+
+/* ============================================================
+   HUD / 通知
+   ============================================================ */
+const $ = id => document.getElementById(id);
+function fmt(n){ n=Math.floor(n); return n>=10000 ? (n/1000).toFixed(1)+'k' : n; }
+
+function updateHUD(){
+  $('day-num').textContent = `第 ${S.day} 天`;
+  const mins = 6*60 + (S.tick%DAY_TICKS)*16; // 每天从 06:00 开始
+  $('clock').textContent = `${String(Math.floor(mins/60)%24).padStart(2,'0')}:${String(mins%60).padStart(2,'0')}`;
+  const t = Math.round(S.temp);
+  $('temp-val').textContent = `${t}°`;
+  $('temp-val').style.color = t<=0 ? 'var(--danger)' : t<10 ? 'var(--warn)' : 'var(--fire-2)';
+  const tb = $('temp-bar');
+  const pct = Math.max(0, Math.min(100, (t+30)/80*100));
+  tb.style.width = pct+'%';
+  tb.style.background = t<=0 ? 'var(--danger)' : t<10 ? 'var(--warn)' : 'linear-gradient(90deg,var(--fire-0),var(--fire-2))';
+  for(const r of ['wood','coal','food','iron']){
+    $('r-'+r).textContent = fmt(S.res[r]);
+    const d = S.resDelta[r], el = $('d-'+r);
+    el.textContent = (d>0.3?'+':d<-0.3?'−':'') + (Math.abs(d)>0.3 ? Math.abs(Math.round(d)) : '');
+    el.className = 'd ' + (d>0.3?'up':d<-0.3?'down':'flat');
+  }
+  $('tb-people').textContent = `${S.survivors.length}/${cap()}`;
+  $('tb-army').textContent = `${soldiersTotal()} 兵`;
+  $('tb-build').textContent = `熔炉Lv${S.furnaceLv}`;
+  $('tb-hunt').textContent = S.hunt ? '行军中' : '可出征';
+  $('tb-fun').textContent = '小游戏';
+}
+
+function toast(msg, type){
+  const box = $('toasts');
+  if(box.children.length>3) box.removeChild(box.firstChild);
+  const el = document.createElement('div');
+  el.className = 'toast' + (type==='bad'?' bad':type==='good'?' good':'');
+  el.textContent = msg;
+  box.appendChild(el);
+  setTimeout(()=>el.remove(), 3000);
+}
+let bannerTimer = null;
+function showBanner(msg, danger){
+  const b = $('banner');
+  b.textContent = msg;
+  b.className = 'show' + (danger?' danger':'');
+  clearTimeout(bannerTimer);
+  if(!danger) bannerTimer = setTimeout(hideBanner, 4000);
+}
+function hideBanner(){ $('banner').className = ''; }
+
+/* ============================================================
+   面板系统
+   ============================================================ */
+let panelTab = null;
+document.querySelectorAll('.tab').forEach(t=>{
+  t.addEventListener('click', ()=>{
+    const tab = t.dataset.tab;
+    if(panelTab===tab){ closePanel(); return; }
+    openPanel(tab);
+  });
+});
+$('panel-close').addEventListener('click', closePanel);
+
+function openPanel(tab){
+  panelTab = tab;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active', t.dataset.tab===tab));
+  $('panel').classList.add('open');
+  renderPanel();
+}
+function closePanel(){
+  panelTab = null;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  $('panel').classList.remove('open');
+}
+
+function costHtml(cost){
+  if(!cost) return '';
+  const ic = {wood:'🪵', coal:'🪨', food:'🍖', iron:'⛏️'};
+  return '<div class="cost">' + Object.entries(cost).filter(([,v])=>v>0)
+    .map(([r,v])=>`<span class="${S.res[r]<v?'lack':''}">${ic[r]}${v}</span>`).join(' ') + '</div>';
+}
+function canAfford(cost){
+  if(!cost) return true;
+  return Object.entries(cost).every(([r,v])=>S.res[r]>=v);
+}
+function pay(cost){
+  if(!canAfford(cost)) return false;
+  for(const r in cost) S.res[r]-=cost[r];
+  return true;
+}
+
+function renderPanel(){
+  if(!panelTab) return;
+  const body = $('panel-body');
+  const titles = {build:'基地建筑', people:'幸存者管理', army:'军队与英雄', hunt:'征战四方', fun:'娱乐挑战'};
+  $('panel-title').textContent = titles[panelTab];
+  if(panelTab==='build') body.innerHTML = buildHtml();
+  else if(panelTab==='people') body.innerHTML = peopleHtml();
+  else if(panelTab==='army') body.innerHTML = armyHtml();
+  else if(panelTab==='hunt') body.innerHTML = huntHtml();
+  else if(panelTab==='fun') body.innerHTML = funHtml();
+  bindPanelActions(body);
+}
+
+/* ---- 建筑面板 ---- */
+function buildHtml(){
+  let h = '';
+  // 熔炉
+  const f = DATA.furnace[S.furnaceLv-1], next = DATA.furnace[S.furnaceLv];
+  h += `<div class="card"><div class="card-row">
+    <div class="card-ic">🔥</div>
+    <div class="card-main">
+      <div class="card-name">熔炉<span class="lv">Lv${S.furnaceLv}</span></div>
+      <div class="card-desc">温度上限 ${f.maxTemp}° · 幸存者容量 ${f.cap} · 燃料 ${S.burning?'燃烧中':'<span style="color:var(--danger)">熄灭</span>'}</div>
+      ${next?costHtml(next.cost):'<div class="cost">已满级</div>'}
+    </div>
+    ${next?`<button class="btn btn-fire" data-act="furnace-up" ${canAfford(next.cost)?'':'disabled'}>升级</button>`:''}
+  </div></div>`;
+  // 其他建筑
+  for(const key in DATA.buildings){
+    const def = DATA.buildings[key], lv = S.built[key];
+    const maxed = lv>=def.levels.length;
+    const cur = lv>0 ? def.levels[lv-1] : null;
+    const nxt = maxed ? null : def.levels[lv];
+    let effect = def.desc;
+    if(cur && cur.out) effect += `（${Object.entries(cur.out).map(([r,v])=>`${v}/分`).join('、')}）`;
+    if(cur && cur.capAdd) effect += `（+${cur.capAdd} 容量）`;
+    h += `<div class="card"><div class="card-row">
+      <div class="card-ic">${def.icon}</div>
+      <div class="card-main">
+        <div class="card-name">${def.name}${lv>0?`<span class="lv">Lv${lv}</span>`:''}</div>
+        <div class="card-desc">${lv>0?effect:def.desc}</div>
+        ${nxt?costHtml(nxt.cost):'<div class="cost">已满级</div>'}
+      </div>
+      ${nxt?`<button class="btn ${lv===0?'btn-fire':'btn-ice'}" data-act="build" data-key="${key}" ${canAfford(nxt.cost)?'':'disabled'}>${lv===0?'建造':'升级'}</button>`:''}
+    </div></div>`;
+  }
+  // 科技
+  if(S.built.lab>0){
+    h += `<div class="sec-title">科 技 研 发</div>`;
+    for(const t of DATA.techs){
+      const done = hasTech(t.id);
+      h += `<div class="card"><div class="card-row">
+        <div class="card-ic">${done?'✅':'🧪'}</div>
+        <div class="card-main">
+          <div class="card-name">${t.name}</div>
+          <div class="card-desc">${t.desc}</div>
+          ${done?'':costHtml(t.cost)}
+        </div>
+        ${done?'':`<button class="btn btn-ice" data-act="tech" data-key="${t.id}" ${canAfford(t.cost)?'':'disabled'}>研发</button>`}
+      </div></div>`;
+    }
+  }
+  // 法典
+  h += `<div class="sec-title">法 典</div>`;
+  for(const c of DATA.codex){
+    const got = hasCodex(c.id);
+    h += `<div class="card"><div class="card-row">
+      <div class="card-ic">${got?'📜':'🔒'}</div>
+      <div class="card-main">
+        <div class="card-name" style="${got?'':'color:var(--ink-dim)'}">${c.name}</div>
+        <div class="card-desc">${got?c.desc:'解锁条件：'+c.cond}</div>
+      </div>
+    </div></div>`;
+  }
+  return h;
+}
+
+/* ---- 幸存者面板 ---- */
+function peopleHtml(){
+  const idle = jobCount('idle');
+  let h = `<div class="card"><div class="card-row">
+    <div class="card-ic">🧑‍🤝‍🧑</div>
+    <div class="card-main">
+      <div class="card-name">营地人口 ${S.survivors.length} / ${cap()}</div>
+      <div class="card-desc">幸福度 ${Math.round(happiness())} · 空闲 ${idle} 人 · 患病 ${S.survivors.filter(s=>s.status!=='healthy').length} 人</div>
+      <div class="prog"><i style="width:${happiness()}%"></i></div>
+    </div></div></div>`;
+  h += `<div class="sec-title">岗 位 分 配</div>`;
+  for(const j in DATA.jobs){
+    const def = DATA.jobs[j], n = jobCount(j), slots = workerSlots(j);
+    const noBuilding = def.target && S.built[def.target]<=0;
+    h += `<div class="card"><div class="card-row">
+      <div class="card-main">
+        <div class="card-name">${def.name} <span style="color:var(--ink-dim);font-size:10px">${noBuilding?'（需建造'+DATA.buildings[def.target].name+'）':def.target?`上限 ${slots}`:'随队狩猎'}</span></div>
+        <div class="card-desc">${def.target?DATA.buildings[def.target].desc:'狩猎归来食物 +30%/人（最多2人生效）'}</div>
+      </div>
+      <div class="stepper">
+        <button data-act="job-" data-key="${j}" ${n<=0?'disabled':''}>−</button>
+        <span class="n">${n}</span>
+        <button data-act="job+" data-key="${j}" ${(idle<=0 || n>=slots)?'disabled':''}>＋</button>
+      </div>
+    </div></div>`;
+  }
+  h += `<div class="sec-title">人 员 名 册</div><div class="card">`;
+  for(const s of S.survivors){
+    const statusChip = s.status==='frostbite' ? '<span class="chip bad">🥶冻伤</span>'
+      : s.status==='sick' ? '<span class="chip bad">🤒疾病</span>' : '<span class="chip good">健康</span>';
+    const match = {lumber:'伐木',mine:'采矿',cook:'烹饪',medic:'医疗',hunter:'狩猎'}[s.job]===s.spec;
+    h += `<div style="padding:5px 0;border-bottom:1px solid rgba(140,180,231,.08);font-size:11px;color:var(--ice-1)">
+      <b>${s.name}</b> <span class="chip">特长:${s.spec}</span> ${statusChip}
+      <span class="chip">${s.job==='idle'?'空闲':DATA.jobs[s.job].name}${match?' ✨':''}</span></div>`;
+  }
+  h += `</div>`;
+  return h;
+}
+
+/* ---- 军队面板 ---- */
+function armyHtml(){
+  const h = DATA.hero;
+  let out = `<div class="card"><div class="card-row">
+    <div class="card-ic">${h.icon}</div>
+    <div class="card-main">
+      <div class="card-name">${h.name}<span class="lv">Lv${S.hero.lv}</span></div>
+      <div class="card-desc">技能【坚冰护甲】${h.aura} · 经验 ${S.hero.exp}/${S.hero.lv*60}</div>
+      <div class="prog"><i style="width:${S.hero.exp/(S.hero.lv*60)*100}%"></i></div>
+    </div></div></div>`;
+  out += `<div class="card"><div class="card-row">
+    <div class="card-ic">⚔️</div>
+    <div class="card-main">
+      <div class="card-name">部队战力 ${armyPower()}</div>
+      <div class="card-desc">士兵 ${soldiersTotal()} / ${soldierCap()}${S.built.barracks<=0?' · <span style="color:var(--warn)">建造兵营解锁训练</span>':''}</div>
+    </div></div></div>`;
+  for(const k of ['shield','archer']){
+    const t = DATA.soldierTypes[k];
+    out += `<div class="card"><div class="card-row">
+      <div class="card-ic">${t.icon}</div>
+      <div class="card-main">
+        <div class="card-name">${t.name} × ${S.soldiers[k]}</div>
+        <div class="card-desc">攻${t.atk} 防${t.def} 血${t.hp}</div>
+        ${costHtml(t.cost)}
+      </div>
+      <button class="btn btn-ice" data-act="train" data-key="${k}"
+        ${(S.built.barracks>0 && canAfford(t.cost) && soldiersTotal()<soldierCap())?'':'disabled'}>训练</button>
+    </div></div>`;
+  }
+  return out;
+}
+
+/* ---- 狩猎面板 ---- */
+function huntHtml(){
+  if(S.hunt){
+    const m = DATA.monsters.find(x=>x.id===S.hunt.monsterId);
+    const phaseTxt = {march:'🚶 行军前往猎场……', battle:'⚔️ 激战中……', return:'🏃 满载而归……'}[S.hunt.phase];
+    return `<div class="card"><div class="card-row">
+      <div class="card-ic">${m.icon}</div>
+      <div class="card-main">
+        <div class="card-name">远征${m.name}</div>
+        <div class="card-desc">${phaseTxt}（${S.hunt.tLeft}s）</div>
+        <div class="prog"><i style="width:100%"></i></div>
+      </div></div></div>`;
+  }
+  let h = `<div class="card"><div class="card-desc" style="font-size:11px">
+    当前部队战力 <b style="color:var(--fire-2)">${armyPower()}</b> · 猎人岗位可提升食物战利品 +30%/人</div></div>`;
+  for(const m of DATA.monsters){
+    const locked = S.day < m.minDay;
+    const weak = armyPower() < m.power;
+    h += `<div class="card"><div class="card-row">
+      <div class="card-ic">${m.icon}</div>
+      <div class="card-main">
+        <div class="card-name">${m.name}</div>
+        <div class="card-desc">${m.desc}</div>
+        <div class="cost">推荐战力 ${m.power} ${weak?'<span class="lack">（战力不足！）</span>':'<span style="color:var(--ok)">✓</span>'} · 往返 ${m.march}s</div>
+      </div>
+      <button class="btn btn-fire" data-act="hunt" data-key="${m.id}"
+        ${(locked || soldiersTotal()===0)?'disabled':''}>${locked?`第${m.minDay}天解锁`:'出征'}</button>
+    </div></div>`;
+  }
+  // 掠夺 PVE
+  h += `<div class="sec-title">掠 夺 营 地（PVE）</div>`;
+  for(const c of DATA.raids){
+    const cd = S.raidCd[c.id];
+    const locked = S.day < c.minDay;
+    const weak = armyPower() < c.power;
+    h += `<div class="card"><div class="card-row">
+      <div class="card-ic">${c.icon}</div>
+      <div class="card-main">
+        <div class="card-name">${c.name}</div>
+        <div class="card-desc">${c.desc}</div>
+        <div class="cost">守军战力 ${c.power} ${weak?'<span class="lack">（战力不足！）</span>':'<span style="color:var(--ok)">✓</span>'}${cd>0?` · 休整 ${cd}s`:''}</div>
+      </div>
+      <button class="btn btn-fire" data-act="raid" data-key="${c.id}"
+        ${(locked || cd>0 || soldiersTotal()===0)?'disabled':''}>${locked?`第${c.minDay}天`:(cd>0?'休整中':'掠夺')}</button>
+    </div></div>`;
+  }
+  return h;
+}
+
+/* ---- 娱乐面板 ---- */
+function funHtml(){
+  const games = [
+    {id:'ice', icon:'🧊', name:'破冰救援', desc:'30 秒极限救援！拖动冰块到火堆解冻幸存者，厚冰需先敲碎。奖励：食物 + 幸存者加入营地', best:mgBest('ice'), unit:'人'},
+    {id:'trap', icon:'🪤', name:'狩猎防御', desc:'60 秒大门保卫战！点击雪地布置尖刺陷阱，拦住冲锋的狼群。奖励：食物', best:mgBest('trap'), unit:'只'},
+    {id:'chariot', icon:'🚜', name:'战车攻防', desc:'三波装甲车队来袭！拖动战车躲避炮火、拾取零件、改造升级。奖励：铁矿', best:mgBest('chariot'), unit:'波'},
+  ];
+  let h = `<div class="card"><div class="card-desc" style="font-size:11px">
+    广告同款小游戏！挑战获得的资源直接带回营地。挑战期间主世界时间暂停。</div></div>`;
+  for(const g of games){
+    h += `<div class="mg-card">
+      <div class="mg-ic">${g.icon}</div>
+      <div class="card-main">
+        <div class="card-name">${g.name}</div>
+        <div class="card-desc">${g.desc}</div>
+        <div class="cost">🏆 最佳纪录：${g.best} ${g.unit}</div>
+      </div>
+      <button class="btn btn-fire" data-act="mg" data-key="${g.id}">开始</button>
+    </div>`;
+  }
+  h += `<div class="sec-title">排 行 与 分 享</div>
+  <div class="card"><div class="card-row">
+    <div class="card-ic">🏆</div>
+    <div class="card-main">
+      <div class="card-name">生存排行榜</div>
+      <div class="card-desc">${WXG?'微信好友排行（开放数据域）':'本地最佳战绩 · 微信小游戏内自动切换好友排行'}</div>
+    </div>
+    <button class="btn btn-ice" data-act="lb">查看</button>
+  </div></div>
+  <div class="card"><div class="card-row">
+    <div class="card-ic">📤</div>
+    <div class="card-main">
+      <div class="card-name">分享战绩</div>
+      <div class="card-desc">当前存活 ${S.day} 天 · 救援 ${S.stats.rescued} 人</div>
+    </div>
+    <button class="btn btn-ice" data-act="share">分享</button>
+  </div></div>`;
+  return h;
+}
+
+/* ---- 面板动作 ---- */
+function bindPanelActions(body){
+  body.querySelectorAll('[data-act]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const act = btn.dataset.act, key = btn.dataset.key;
+      if(act==='furnace-up'){
+        const next = DATA.furnace[S.furnaceLv];
+        if(next && pay(next.cost)){ S.furnaceLv++; toast(`🔥 熔炉升至 Lv${S.furnaceLv}！温度上限 ${next.maxTemp}°`, 'good'); }
+      }else if(act==='build'){
+        const def = DATA.buildings[key], lv = S.built[key];
+        if(pay(def.levels[lv].cost)){
+          S.built[key]++;
+          toast(`${def.icon} ${def.name}${lv===0?'建成':'升至 Lv'+(lv+1)}！`, 'good');
+        }
+      }else if(act==='tech'){
+        const t = DATA.techs.find(x=>x.id===key);
+        if(pay(t.cost)){ S.techs.push(t.id); toast(`🧪 科技【${t.name}】研发完成`, 'good'); }
+      }else if(act==='job+' || act==='job-'){
+        assignJob(key, act==='job+' ? 1 : -1);
+      }else if(act==='train'){
+        const t = DATA.soldierTypes[key];
+        if(soldiersTotal()<soldierCap() && pay(t.cost)){
+          S.soldiers[key]++;
+          toast(`${t.icon} 一名${t.name}完成训练`, 'good');
+        }
+      }else if(act==='hunt'){
+        const m = DATA.monsters.find(x=>x.id===key);
+        S.hunt = {monsterId:key, phase:'march', tLeft:m.march, tTotal:m.march};
+        toast(`🏹 狩猎队出发，目标：${m.name}`, '');
+        closePanel();
+      }else if(act==='raid'){
+        raidCamp(key);
+      }else if(act==='mg'){
+        startMG(key);
+      }else if(act==='share'){
+        shareGame();
+      }else if(act==='lb'){
+        showLeaderboard();
+      }
+      updateHUD();
+      renderPanel();
+    });
+  });
+}
+
+function assignJob(job, dir){
+  if(dir>0){
+    const s = S.survivors.find(x=>x.job==='idle');
+    if(s && jobCount(job)<workerSlots(job)) s.job = job;
+  }else{
+    const list = S.survivors.filter(x=>x.job===job);
+    if(list.length) list[list.length-1].job = 'idle';
+  }
+}
+
+/* ============================================================
+   微信小游戏适配器（浏览器环境自动降级）
+   ============================================================ */
+const WXG = (typeof wx!=='undefined' && typeof wx.shareAppMessage==='function') ? wx : null;
+if(WXG){
+  try{
+    WXG.setShareMenu && WXG.setShareMenu({withShareTicket:true});
+    WXG.onShareAppMessage && WXG.onShareAppMessage(()=>({
+      title:'无尽冬日·篝火营地——极寒末日，你能撑几天？', imageUrl:''}));
+  }catch(e){}
+}
+
+function shareGame(){
+  const d = S ? S.day : 0, r = S ? S.stats.rescued : 0;
+  const text = `我在《无尽冬日·篝火营地》存活了 ${d} 天，救援 ${r} 名幸存者！极寒末日，你敢来挑战吗？`;
+  if(WXG){ WXG.shareAppMessage({title:text}); toast('📤 已唤起微信分享','good'); return; }
+  if(navigator.share){ navigator.share({title:'无尽冬日·篝火营地', text}).catch(()=>{}); return; }
+  const ta = document.createElement('textarea'); ta.value = text;
+  document.body.appendChild(ta); ta.select();
+  try{ document.execCommand('copy'); toast('📋 战绩已复制，去粘贴分享吧','good'); }
+  catch(e){ toast(text,''); }
+  ta.remove();
+}
+
+function submitScore(){
+  if(!S) return;
+  const days = S.day;
+  // 本地排行榜
+  let lb = [];
+  try{ lb = JSON.parse(localStorage.getItem('winter_lb')||'[]'); }catch(e){}
+  lb.push({name:'我', days, ts:Date.now()});
+  lb.sort((a,b)=>b.days-a.days || a.ts-b.ts);
+  try{ localStorage.setItem('winter_lb', JSON.stringify(lb.slice(0,20))); }catch(e){}
+  // 微信云存储（好友排行榜数据源，需配合开放数据域展示）
+  if(WXG && WXG.setUserCloudStorage){
+    try{ WXG.setUserCloudStorage({KVDataList:[{key:'days', value:String(days)}]}); }catch(e){}
+  }
+}
+
+function showLeaderboard(){
+  if(WXG && WXG.getOpenDataContext){
+    try{ WXG.getOpenDataContext().postMessage({type:'showFriendsRank', key:'days'}); }catch(e){}
+  }
+  let lb = [];
+  try{ lb = JSON.parse(localStorage.getItem('winter_lb')||'[]'); }catch(e){}
+  const list = $('lb-list');
+  if(lb.length===0){
+    list.innerHTML = '<div style="text-align:center;color:var(--ink-dim);font-size:12px;padding:20px">暂无记录，先活下去！</div>';
+  }else{
+    const medals = ['🥇','🥈','🥉'];
+    list.innerHTML = lb.slice(0,10).map((r,i)=>
+      `<div class="lb-row"><span class="lb-rank">${medals[i]||(i+1)}</span><span>${r.name}</span>
+       <span style="color:var(--ink-dim);font-size:10px">${new Date(r.ts).toLocaleDateString()}</span>
+       <span class="lb-days">${r.days} 天</span></div>`).join('');
+  }
+  $('lb-modal').classList.add('show');
+}
+
+$('ov-share').addEventListener('click', shareGame);
+$('ov-lb').addEventListener('click', showLeaderboard);
+
+/* ============================================================
+   小游戏框架
+   ============================================================ */
+const MG = {active:null, st:null, buttons:[]};
+
+function mgBest(k){ return parseInt(localStorage.getItem('mg_'+k)||'0'); }
+function mgSetBest(k,v){ if(v>mgBest(k)){ localStorage.setItem('mg_'+k, String(v)); return true; } return false; }
+
+function startMG(type){
+  closePanel();
+  S.paused = true;
+  MG.active = type;
+  const titles = {ice:'🧊 破冰救援', trap:'🪤 狩猎防御', chariot:'🚜 战车攻防'};
+  $('mg-title').textContent = titles[type];
+  $('mgbar').classList.add('show');
+  document.getElementById('tabbar').style.display = 'none';
+  if(type==='ice')    MG.st = {t:30, saved:0, blocks:[], drag:null, spawnT:0, flash:0};
+  if(type==='trap')   MG.st = {t:60, wood:60, hp:5, kills:0, beasts:[], traps:[], spawnT:0.5};
+  if(type==='chariot')MG.st = {hp:100, wave:1, need:8, got:0, parts:0, px:0.5, enemies:[], bullets:[], eb:[], crates:[],
+                               dmg:10, rate:2.5, armor:0, fireT:0, phase:'battle', over:0};
+}
+
+function endMG(reward, summary){
+  const type = MG.active;
+  MG.active = null; MG.st = null;
+  $('mgbar').classList.remove('show');
+  document.getElementById('tabbar').style.display = 'grid';
+  S.paused = false;
+  if(reward){
+    for(const r in reward.res||{}) S.res[r] += reward.res[r];
+    if(reward.survivors){
+      for(let i=0;i<reward.survivors && S.survivors.length<cap();i++){ addSurvivor(true); S.stats.rescued++; }
+    }
+    toast(summary, 'good');
+  }else if(summary){ toast(summary, ''); }
+  updateHUD();
+}
+
+$('mg-exit').addEventListener('click', ()=>endMG(null, '已退出挑战'));
+
+/* ---- 小游戏画布按钮 ---- */
+function mgBtn(x,y,w,h,label,cb,color){
+  ctx.fillStyle = color || 'rgba(255,154,60,.9)';
+  roundRect(x,y,w,h,10); ctx.fill();
+  ctx.fillStyle = '#fff'; ctx.font = 'bold 13px sans-serif'; ctx.textAlign = 'center';
+  ctx.fillText(label, x+w/2, y+h/2+5);
+  MG.buttons.push({x,y,w,h,cb});
+}
+
+/* ---- 小游戏指针分发 ---- */
+function mgPointer(kind, nx, ny){
+  const st = MG.st;
+  if(!st) return;
+  if(kind==='down'){
+    for(const b of MG.buttons){
+      const bx=b.x*W, by=b.y*H, bw=b.w*W, bh=b.h*H, px=nx*W, py=ny*H;
+      if(px>=bx&&px<=bx+bw&&py>=by&&py<=by+bh){ b.cb(); return; }
+    }
+  }
+  if(MG.active==='ice') icePointer(kind,nx,ny,st);
+  else if(MG.active==='trap') trapPointer(kind,nx,ny,st);
+  else if(MG.active==='chariot') chariotPointer(kind,nx,ny,st);
+}
+
+/* ============================================================
+   小游戏 1：破冰救援 —— 拖拽冰块到火堆解冻
+   ============================================================ */
+function icePointer(kind,nx,ny,st){
+  if(kind==='down'){
+    for(let i=st.blocks.length-1;i>=0;i--){
+      const b = st.blocks[i], dx=nx-b.x, dy=ny-b.y;
+      if(dx*dx+dy*dy < 0.004){
+        if(b.hp>1){ b.hp--; b.crack=1; return; }  // 厚冰先敲碎
+        st.drag = b; b.dragging = true; return;
+      }
+    }
+  }else if(kind==='move' && st.drag){
+    st.drag.x = Math.max(0.05, Math.min(0.95, nx));
+    st.drag.y = Math.max(0.15, Math.min(0.9, ny));
+  }else if(kind==='up' && st.drag){
+    const b = st.drag; b.dragging = false; st.drag = null;
+    const dx = nx-0.5, dy = ny-0.82;
+    if(dx*dx+dy*dy < 0.018){ // 落入火堆
+      st.blocks.splice(st.blocks.indexOf(b),1);
+      st.saved++; st.flash = 0.3;
+    }
+  }
+}
+
+function drawIce(st, dt){
+  // 冰湖背景
+  const g = ctx.createLinearGradient(0,0,0,H);
+  g.addColorStop(0,'#0a1830'); g.addColorStop(0.5,'#16305c'); g.addColorStop(1,'#8cb4e7');
+  ctx.fillStyle = g; ctx.fillRect(0,0,W,H);
+  // 冰面纹理
+  ctx.strokeStyle = 'rgba(234,243,253,.12)'; ctx.lineWidth = 1;
+  for(let i=0;i<6;i++){
+    ctx.beginPath(); ctx.moveTo(W*0.1*i, H*0.3);
+    ctx.lineTo(W*(0.2+0.13*i), H*0.7); ctx.stroke();
+  }
+  // 火堆
+  const fx = W*0.5, fy = H*0.82;
+  const glow = ctx.createRadialGradient(fx,fy,5,fx,fy,70);
+  glow.addColorStop(0,'rgba(255,154,60,.6)'); glow.addColorStop(1,'rgba(255,94,58,0)');
+  ctx.fillStyle = glow; ctx.beginPath(); ctx.arc(fx,fy,70,0,6.29); ctx.fill();
+  ctx.strokeStyle = 'rgba(255,209,102,.7)'; ctx.setLineDash([6,5]); ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.arc(fx,fy,0.135*W,0,6.29); ctx.stroke(); ctx.setLineDash([]);
+  for(let i=0;i<5;i++){
+    const fr = 8+6*Math.abs(Math.sin(tGlobal*7+i*1.3));
+    ctx.fillStyle = i%2 ? 'rgba(255,196,87,.9)' : 'rgba(255,94,58,.85)';
+    ctx.beginPath(); ctx.arc(fx+(i-2)*7, fy-4-Math.abs(Math.sin(tGlobal*5+i))*8, fr*0.5, 0, 6.29); ctx.fill();
+  }
+  ctx.fillStyle = '#ffc457'; ctx.font = 'bold 11px sans-serif'; ctx.textAlign='center';
+  ctx.fillText('🔥 拖到这里解冻', fx, fy+30);
+
+  // 冰块
+  st.spawnT -= dt;
+  if(st.spawnT<=0 && st.blocks.length<7){
+    st.spawnT = 1.1;
+    st.blocks.push({x:0.1+Math.random()*0.8, y:0.18+Math.random()*0.1,
+      vy:0.02+Math.random()*0.02, vx:(Math.random()-0.5)*0.01,
+      hp:Math.random()<0.3?2:1, crack:0, bob:Math.random()*6.28});
+  }
+  for(const b of st.blocks){
+    if(!b.dragging){ b.y += b.vy*dt; b.x += b.vx*dt;
+      if(b.x<0.06||b.x>0.94) b.vx*=-1;
+      if(b.y>0.72){ b.y=0.72; b.vy=0; } }
+    const px=b.x*W, py=b.y*H + Math.sin(tGlobal*3+b.bob)*2;
+    const r = b.hp>1 ? 24 : 19;
+    ctx.fillStyle = b.hp>1 ? 'rgba(140,180,231,.9)' : 'rgba(178,214,245,.85)';
+    roundRect(px-r, py-r, r*2, r*2, 6); ctx.fill();
+    ctx.fillStyle = 'rgba(234,243,253,.55)';
+    roundRect(px-r+4, py-r+4, r*0.7, r*2-8, 4); ctx.fill();
+    if(b.crack){ ctx.strokeStyle='rgba(13,31,66,.6)'; ctx.lineWidth=1.5;
+      ctx.beginPath(); ctx.moveTo(px-r+4,py-r+5); ctx.lineTo(px+3,py); ctx.lineTo(px-r+8,py+r-6); ctx.stroke(); }
+    // 被困小人
+    ctx.fillStyle = 'rgba(60,90,140,.75)';
+    ctx.beginPath(); ctx.arc(px+3, py-3, 4, 0, 6.29); ctx.fill();
+    roundRect(px, py+1, 7, 11, 3); ctx.fill();
+    if(b.hp>1){ ctx.fillStyle='#fff'; ctx.font='bold 10px sans-serif';
+      ctx.fillText('厚冰×'+b.hp, px, py-r-5); }
+  }
+  // 救出闪光
+  if(st.flash>0){ st.flash-=dt;
+    ctx.fillStyle = `rgba(255,209,102,${st.flash*2})`;
+    ctx.beginPath(); ctx.arc(fx,fy,50,0,6.29); ctx.fill(); }
+
+  // HUD
+  st.t -= dt;
+  $('mg-info').textContent = `⏱ ${Math.ceil(st.t)}s · 已救 ${st.saved}`;
+  ctx.fillStyle = 'rgba(234,243,253,.9)'; ctx.font = '12px sans-serif'; ctx.textAlign='center';
+  ctx.fillText('拖动冰块到火堆解冻，厚冰需先点击敲碎', W/2, H*0.13);
+  if(st.t<=0){
+    const food = st.saved*12, surv = Math.floor(st.saved/4);
+    const isBest = mgSetBest('ice', st.saved);
+    endMG({res:{food}, survivors:surv},
+      `🧊 破冰救援结束！救出 ${st.saved} 人 → 🍖+${food}${surv?` · ${surv}人加入营地`:''}${isBest?' · 新纪录！':''}`);
+  }
+}
+
+/* ============================================================
+   小游戏 2：狩猎防御 —— 摆陷阱拦住野兽
+   ============================================================ */
+function trapPointer(kind,nx,ny,st){
+  if(kind!=='down') return;
+  if(ny<0.22 || ny>0.86) return;
+  if(st.wood<5){ toast('🪵 木材不足！','bad'); return; }
+  // 不能叠放
+  for(const t of st.traps){ const dx=nx-t.x, dy=ny-t.y; if(dx*dx+dy*dy<0.002) return; }
+  st.wood -= 5;
+  st.traps.push({x:nx, y:ny});
+}
+
+function drawTrap(st, dt){
+  // 雪道背景
+  const g = ctx.createLinearGradient(0,0,0,H);
+  g.addColorStop(0,'#16305c'); g.addColorStop(0.4,'#c9ddf6'); g.addColorStop(1,'#eaf3fd');
+  ctx.fillStyle = g; ctx.fillRect(0,0,W,H);
+  // 营地大门
+  ctx.fillStyle = '#3a4f78'; roundRect(W*0.1, H*0.88, W*0.8, H*0.05, 6); ctx.fill();
+  ctx.fillStyle = '#dcebfb'; ctx.font = 'bold 12px sans-serif'; ctx.textAlign='center';
+  ctx.fillText(`🏕️ 营地大门 耐久 ${st.hp}/5`, W/2, H*0.875);
+  // 陷阱
+  for(const t of st.traps){
+    const px=t.x*W, py=t.y*H;
+    ctx.strokeStyle = '#6b4a2f'; ctx.lineWidth = 3; ctx.lineCap='round';
+    for(let i=-1;i<=1;i++){
+      ctx.beginPath(); ctx.moveTo(px+i*7-4, py+6); ctx.lineTo(px+i*7, py-7); ctx.lineTo(px+i*7+4, py+6); ctx.stroke();
+    }
+  }
+  // 野兽
+  st.spawnT -= dt;
+  const speedUp = 1 + (60-st.t)/60;
+  if(st.spawnT<=0){
+    st.spawnT = Math.max(0.5, 1.6 - (60-st.t)*0.015);
+    st.beasts.push({x:0.1+Math.random()*0.8, y:0.2, vy:(0.05+Math.random()*0.03)*speedUp, wig:Math.random()*6.28});
+  }
+  for(let i=st.beasts.length-1;i>=0;i--){
+    const b = st.beasts[i];
+    b.y += b.vy*dt; b.wig += dt*3;
+    b.x += Math.sin(b.wig)*0.001;
+    // 踩陷阱
+    let dead = false;
+    for(let j=st.traps.length-1;j>=0;j--){
+      const t = st.traps[j], dx=b.x-t.x, dy=b.y-t.y;
+      if(dx*dx+dy*dy < 0.0016){ st.traps.splice(j,1); dead=true; break; }
+    }
+    if(dead){ st.beasts.splice(i,1); st.kills++; continue; }
+    if(b.y>=0.86){ st.beasts.splice(i,1); st.hp--; continue; }
+    ctx.font = '22px sans-serif'; ctx.textAlign='center';
+    ctx.fillText('🐺', b.x*W, b.y*H);
+  }
+  // HUD
+  st.t -= dt;
+  $('mg-info').textContent = `⏱ ${Math.ceil(st.t)}s · 🪵${st.wood} · 击杀 ${st.kills}`;
+  ctx.fillStyle = 'rgba(13,31,66,.75)'; ctx.font = '12px sans-serif';
+  ctx.fillText('点击雪地放置尖刺陷阱（5🪵），拦住野兽！', W/2, H*0.15);
+  if(st.hp<=0 || st.t<=0){
+    const food = st.kills*15;
+    const isBest = mgSetBest('trap', st.kills);
+    endMG(st.kills>0 ? {res:{food}} : null,
+      st.hp<=0 ? `🐺 大门被攻破！击杀 ${st.kills} 只 → 🍖+${food}` :
+      `🪤 防守成功！击杀 ${st.kills} 只 → 🍖+${food}${isBest?' · 新纪录！':''}`);
+  }
+}
+
+/* ============================================================
+   小游戏 3：战车攻防 —— 移动战车击溃装甲车队
+   ============================================================ */
+function chariotPointer(kind,nx,ny,st){
+  if(st.phase!=='battle') return;
+  if(kind==='down'||kind==='move') st.px = Math.max(0.08, Math.min(0.92, nx));
+}
+
+function drawChariot(st, dt){
+  // 冰原公路
+  const g = ctx.createLinearGradient(0,0,0,H);
+  g.addColorStop(0,'#0a1830'); g.addColorStop(0.6,'#16305c'); g.addColorStop(1,'#8cb4e7');
+  ctx.fillStyle = g; ctx.fillRect(0,0,W,H);
+  ctx.strokeStyle = 'rgba(234,243,253,.25)'; ctx.lineWidth = 2; ctx.setLineDash([14,18]);
+  ctx.beginPath(); ctx.moveTo(W*0.5, 0); ctx.lineTo(W*0.5, H); ctx.stroke(); ctx.setLineDash([]);
+
+  if(st.phase==='battle'){
+    // 自动开火
+    st.fireT -= dt;
+    if(st.fireT<=0){ st.fireT = 1/st.rate; st.bullets.push({x:st.px, y:0.80}); }
+    // 刷敌
+    st.spawnT = (st.spawnT??0) - dt;
+    if(st.spawnT<=0 && st.got + st.enemies.length < st.need){
+      st.spawnT = 1.4;
+      st.enemies.push({x:0.15+Math.random()*0.7, y:0.12, hp:18+st.wave*8, vy:0.02+st.wave*0.004, fireT:1+Math.random()});
+    }
+    // 子弹
+    for(let i=st.bullets.length-1;i>=0;i--){
+      const b = st.bullets[i]; b.y -= 0.012;
+      if(b.y<0.05){ st.bullets.splice(i,1); continue; }
+      let hit = false;
+      for(const e of st.enemies){
+        const dx=b.x-e.x, dy=b.y-e.y;
+        if(dx*dx+dy*dy<0.002){ e.hp-=st.dmg; hit=true; break; }
+      }
+      if(hit){ st.bullets.splice(i,1); continue; }
+      ctx.fillStyle = '#ffc457'; ctx.beginPath(); ctx.arc(b.x*W, b.y*H, 3, 0, 6.29); ctx.fill();
+    }
+    // 敌车
+    for(let i=st.enemies.length-1;i>=0;i--){
+      const e = st.enemies[i];
+      e.y += e.vy*dt;
+      e.fireT -= dt;
+      if(e.fireT<=0){ e.fireT = 1.6+Math.random(); st.eb.push({x:e.x, y:e.y+0.03}); }
+      if(e.hp<=0){
+        st.enemies.splice(i,1); st.got++; st.parts += 2;
+        if(Math.random()<0.35) st.crates.push({x:e.x, y:e.y});
+        continue;
+      }
+      if(e.y>0.78){ st.enemies.splice(i,1); st.hp -= 12; continue; } // 撞击
+      const px=e.x*W, py=e.y*H;
+      ctx.fillStyle = '#4a3a52'; roundRect(px-16, py-10, 32, 20, 4); ctx.fill();
+      ctx.fillStyle = '#6b5a75'; roundRect(px-10, py-16, 20, 8, 3); ctx.fill();
+      ctx.fillStyle = '#ff6b6b'; ctx.font = '9px sans-serif'; ctx.textAlign='center';
+      ctx.fillText('▮'.repeat(Math.max(1,Math.ceil(e.hp/15))), px, py-20);
+    }
+    // 敌弹
+    for(let i=st.eb.length-1;i>=0;i--){
+      const b = st.eb[i]; b.y += 0.012;
+      if(b.y>0.95){ st.eb.splice(i,1); continue; }
+      const dx=b.x-st.px, dy=b.y-0.85;
+      if(dx*dx+dy*dy<0.0018){ st.eb.splice(i,1); st.hp -= Math.max(2, 8-st.armor); continue; }
+      ctx.fillStyle = '#ff6b6b'; ctx.beginPath(); ctx.arc(b.x*W, b.y*H, 3, 0, 6.29); ctx.fill();
+    }
+    // 零件箱
+    for(let i=st.crates.length-1;i>=0;i--){
+      const c = st.crates[i]; c.y += 0.008;
+      if(c.y>0.95){ st.crates.splice(i,1); continue; }
+      const dx=c.x-st.px, dy=c.y-0.85;
+      if(dx*dx+dy*dy<0.002){ st.crates.splice(i,1); st.parts += 5; continue; }
+      ctx.font = '16px sans-serif'; ctx.textAlign='center'; ctx.fillText('📦', c.x*W, c.y*H);
+    }
+    // 波次结束
+    if(st.got>=st.need && st.enemies.length===0){
+      if(st.wave>=3){ st.phase='over'; st.over=1; }
+      else st.phase='upgrade';
+    }
+    // 玩家战车
+    drawChariotBody(st.px*W, H*0.85);
+    // 血条
+    ctx.fillStyle = 'rgba(7,15,34,.6)'; roundRect(W*0.25, H*0.94, W*0.5, 10, 5); ctx.fill();
+    ctx.fillStyle = st.hp>40?'#7ce0a3':'#ff6b6b';
+    roundRect(W*0.25, H*0.94, W*0.5*Math.max(0,st.hp)/100, 10, 5); ctx.fill();
+    $('mg-info').textContent = `第${st.wave}/3 波 · 击毁 ${st.got}/${st.need} · ⚙️${st.parts}`;
+    if(st.hp<=0){ st.phase='over'; st.over=0; }
+  }
+  else if(st.phase==='upgrade'){
+    drawChariotBody(st.px*W, H*0.85);
+    ctx.fillStyle = 'rgba(7,15,34,.82)'; roundRect(W*0.08, H*0.25, W*0.84, H*0.4, 14); ctx.fill();
+    ctx.fillStyle = '#eaf3fd'; ctx.font = 'bold 16px sans-serif'; ctx.textAlign='center';
+    ctx.fillText(`第 ${st.wave} 波胜利！改造战车`, W/2, H*0.30);
+    ctx.font = '12px sans-serif'; ctx.fillStyle = '#9db4d8';
+    ctx.fillText(`可用零件 ⚙️${st.parts}`, W/2, H*0.34);
+    mgBtn(W*0.15, H*0.38, W*0.7, 36, `🔧 伤害 +5（10⚙️）当前${st.dmg}`, ()=>{
+      if(st.parts>=10){ st.parts-=10; st.dmg+=5; } });
+    mgBtn(W*0.15, H*0.45, W*0.7, 36, `⚡ 射速 +0.5（10⚙️）当前${st.rate}`, ()=>{
+      if(st.parts>=10){ st.parts-=10; st.rate+=0.5; } });
+    mgBtn(W*0.15, H*0.52, W*0.7, 36, `🛡️ 护甲 +2（8⚙️）当前${st.armor}`, ()=>{
+      if(st.parts>=8){ st.parts-=8; st.armor+=2; } });
+    mgBtn(W*0.15, H*0.59, W*0.7, 36, `▶ 迎战第 ${st.wave+1} 波`, ()=>{
+      st.wave++; st.need = 8+st.wave*2; st.got=0; st.phase='battle'; st.eb=[]; }, 'rgba(124,224,163,.85)');
+  }
+  else{ // over
+    const win = st.over===1;
+    const iron = st.parts*3 + (win?100:0);
+    const isBest = mgSetBest('chariot', win?3:st.wave-1);
+    endMG(iron>0 ? {res:{iron}} : null,
+      win ? `🚜 全歼敌方装甲部队！⚙️零件兑换 ⛏️+${iron}${isBest?' · 新纪录！':''}`
+          : `🚜 战车被击毁……带回零件兑换 ⛏️+${iron}`);
+  }
+}
+
+function drawChariotBody(px, py){
+  ctx.fillStyle = '#2e4a6e'; roundRect(px-20, py-12, 40, 22, 5); ctx.fill();
+  ctx.fillStyle = '#46688f'; roundRect(px-12, py-20, 24, 10, 3); ctx.fill();
+  ctx.fillStyle = '#1a2a44'; roundRect(px-3, py-30, 6, 12, 2); ctx.fill();
+  ctx.fillStyle = '#16305c';
+  ctx.beginPath(); ctx.arc(px-12, py+11, 5, 0, 6.29); ctx.arc(px+12, py+11, 5, 0, 6.29); ctx.fill();
+  ctx.fillStyle = '#ffc457'; ctx.font = '10px sans-serif'; ctx.textAlign='center';
+  ctx.fillText('🔥', px, py+2);
+}
+
+/* ---- 小游戏帧分发 ---- */
+function drawMGFrame(){
+  MG.buttons = [];
+  const dt = 0.016;
+  if(MG.active==='ice') drawIce(MG.st, dt);
+  else if(MG.active==='trap') drawTrap(MG.st, dt);
+  else if(MG.active==='chariot') drawChariot(MG.st, dt);
+}
+
+/* ============================================================
+   游戏流程
+   ============================================================ */
+function gameOver(){
+  S.running = false;
+  clearInterval(tickTimer);
+  submitScore();
+  showBanner('', false); hideBanner();
+  $('ov-title').textContent = '营 地 陷 落';
+  $('ov-sub').textContent = '最 后 的 火 种 熄 灭 了';
+  $('ov-text').innerHTML = `暴风雪带走了最后一位幸存者。<br><br>
+    <b>📊 生存实录</b><br>
+    存活天数：<b>${S.day} 天</b><br>
+    救援幸存者：<b>${S.stats.rescued} 人</b><br>
+    成功狩猎：<b>${S.stats.kills} 次</b><br>
+    死亡：<b>${S.stats.dead} 人</b>`;
+  $('ov-score').textContent = S.day>=7 ? '🏆 传奇守望者！' : S.day>=4 ? '🥈 坚韧的营地' : '🥉 再囤些燃料吧';
+  $('ov-btn').textContent = '重 新 开 始';
+  $('overlay').classList.remove('hidden');
+}
+
+function startGame(){
+  newGame();
+  fireP = []; smokeP = [];
+  $('overlay').classList.add('hidden');
+  hideBanner();
+  clearInterval(tickTimer);
+  tickTimer = setInterval(gameTick, TICK_MS);
+  updateHUD();
+  toast('🔥 熔炉已点燃，分配幸存者去工作吧', 'good');
+  setTimeout(()=>toast('🪵 点击底部【建筑】建造伐木场与厨房', ''), 2500);
+}
+
+$('ov-btn').addEventListener('click', startGame);
+
+/* ---- 启动 ---- */
+resize();
+newGame();       // 预渲染背景场景
+S.running = false;
+updateHUD();
+requestAnimationFrame(draw);
+</script>
+</body>
+</html>
