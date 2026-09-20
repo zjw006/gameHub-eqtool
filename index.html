@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>游戏厅 · Game Hub</title>
+<style>
+  /* ============================================================
+   * 游戏厅 · GAME HUB — 街机选台界面
+   * 三个世界，三条色带：各自的游戏自带调色板即页面配色
+   * ============================================================ */
+  :root{
+    --void:#04070f;            /* 大厅底色：近黑 */
+    --void-2:#070b16;
+    --line:rgba(160,180,220,.14);
+    --txt:#e8eefb;
+    --txt-dim:#8ea0c0;
+    --mono:"Cascadia Mono","JetBrains Mono",Consolas,"Courier New",monospace;
+    --sans:-apple-system,"PingFang SC","Microsoft YaHei","Noto Sans SC",sans-serif;
+
+    /* 无尽冬日 · 篝火营地 */
+    --w0:#070f22; --w1:#102244; --w-ice:#8cb4e7; --w-ice2:#c9ddf6; --w-fire:#ff9a3c; --w-fire2:#ff5e3a;
+    /* 虫潮突围 */
+    --c0:#0a0e1a; --c1:#14294a; --c-cyan:#2ec5ff; --c-cyan2:#7fe3ff; --c-txt:#cfe7ff;
+    /* 遗弃之地 · 皮影塔防 */
+    --p0:#050808; --p1:#1a140c; --p-amber:#d8a35f; --p-paper:#d7d2c8; --p-orange:#ff9e3d;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{height:100%;}
+  body{
+    background:var(--void);color:var(--txt);font-family:var(--sans);
+    overflow:hidden;display:flex;flex-direction:column;
+  }
+
+  /* ===== 顶部跑马灯 ===== */
+  #marquee{
+    flex:none;height:44px;display:flex;align-items:center;gap:14px;
+    padding:0 18px;border-bottom:1px solid var(--line);
+    font-family:var(--mono);font-size:12px;letter-spacing:2px;color:var(--txt-dim);
+    background:var(--void-2);white-space:nowrap;overflow:hidden;
+  }
+  #marquee .dot{width:7px;height:7px;border-radius:50%;background:var(--c-cyan);flex:none;
+    box-shadow:0 0 8px var(--c-cyan);animation:beat 1.6s infinite;}
+  @keyframes beat{0%,100%{opacity:1}50%{opacity:.25}}
+  #marquee .track{display:inline-block;animation:slide 22s linear infinite;}
+  @keyframes slide{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+  #marquee b{color:var(--w-fire);font-weight:700;}
+
+  /* ===== 标题区 ===== */
+  #head{
+    flex:none;display:flex;align-items:baseline;justify-content:space-between;
+    padding:22px 28px 14px;
+  }
+  #head h1{
+    font-size:clamp(30px,4.6vw,54px);font-weight:900;letter-spacing:.12em;line-height:1;
+  }
+  #head h1 .en{
+    font-family:var(--mono);font-size:.38em;font-weight:400;letter-spacing:.42em;
+    color:var(--txt-dim);vertical-align:.42em;margin-left:14px;
+  }
+  #coin{
+    font-family:var(--mono);font-size:13px;letter-spacing:3px;color:var(--w-fire);
+    animation:blink 1.1s steps(2,start) infinite;
+  }
+  @keyframes blink{to{visibility:hidden}}
+
+  /* ===== 三台机台：三条色带 ===== */
+  #floor{flex:1;display:flex;flex-direction:column;min-height:0;}
+  .cab{
+    position:relative;flex:1;min-height:0;display:flex;align-items:center;
+    border-top:1px solid var(--line);cursor:pointer;overflow:hidden;
+    transition:flex .45s cubic-bezier(.22,1,.36,1),background .45s;
+    background:transparent;text-decoration:none;color:inherit;outline:none;
+  }
+  .cab .no{
+    font-family:var(--mono);font-size:clamp(14px,1.4vw,18px);color:var(--txt-dim);
+    width:76px;text-align:center;flex:none;letter-spacing:1px;transition:color .3s;
+  }
+  .cab .mid{flex:1;min-width:0;padding-right:10px;}
+  .cab h2{
+    font-size:clamp(26px,3.6vw,44px);font-weight:900;letter-spacing:.1em;line-height:1.1;
+    transition:color .3s,text-shadow .3s;
+  }
+  .cab .tag{
+    margin-top:8px;display:flex;align-items:center;gap:10px;
+    font-family:var(--mono);font-size:12px;letter-spacing:2.5px;color:var(--txt-dim);
+    transition:color .3s;
+  }
+  .cab .tag .bar{width:34px;height:1px;background:currentColor;opacity:.6;}
+  .cab .go{
+    position:absolute;right:190px;bottom:14px;
+    font-family:var(--mono);font-size:13px;letter-spacing:3px;
+    opacity:0;transform:translateX(-8px);transition:opacity .3s,transform .3s;
+  }
+  .cab svg.poster{
+    flex:none;height:86%;margin-right:34px;opacity:.85;
+    transition:opacity .3s,transform .45s cubic-bezier(.22,1,.36,1);
+  }
+
+  /* --- 各台机台激活态（hover / 选中） --- */
+  .cab[data-g="winter"]:hover,.cab[data-g="winter"].sel{
+    background:linear-gradient(90deg,var(--w0) 0%,var(--w1) 78%,transparent 100%);
+    box-shadow:inset 0 0 0 1px rgba(140,180,231,.28), inset 0 -30px 60px -40px var(--w-fire2);
+  }
+  .cab[data-g="winter"]:hover h2,.cab[data-g="winter"].sel h2{color:var(--w-ice2);text-shadow:0 0 22px rgba(140,180,231,.55);}
+  .cab[data-g="winter"]:hover .tag,.cab[data-g="winter"].sel .tag{color:var(--w-fire);}
+  .cab[data-g="winter"]:hover .no,.cab[data-g="winter"].sel .no{color:var(--w-ice);}
+  .cab[data-g="winter"]:hover .go,.cab[data-g="winter"].sel .go{opacity:1;transform:none;color:var(--w-fire);}
+
+  .cab[data-g="swarm"]:hover,.cab[data-g="swarm"].sel{
+    background:linear-gradient(90deg,var(--c0) 0%,var(--c1) 78%,transparent 100%);
+    box-shadow:inset 0 0 0 1px rgba(46,197,255,.3), inset 0 -30px 60px -40px var(--c-cyan);
+  }
+  .cab[data-g="swarm"]:hover h2,.cab[data-g="swarm"].sel h2{color:var(--c-cyan2);text-shadow:0 0 22px rgba(46,197,255,.6);}
+  .cab[data-g="swarm"]:hover .tag,.cab[data-g="swarm"].sel .tag{color:var(--c-cyan);}
+  .cab[data-g="swarm"]:hover .no,.cab[data-g="swarm"].sel .no{color:var(--c-cyan2);}
+  .cab[data-g="swarm"]:hover .go,.cab[data-g="swarm"].sel .go{opacity:1;transform:none;color:var(--c-cyan);}
+
+  .cab[data-g="puppet"]:hover,.cab[data-g="puppet"].sel{
+    background:linear-gradient(90deg,var(--p0) 0%,var(--p1) 78%,transparent 100%);
+    box-shadow:inset 0 0 0 1px rgba(216,163,95,.32), inset 0 -30px 60px -40px var(--p-orange);
+  }
+  .cab[data-g="puppet"]:hover h2,.cab[data-g="puppet"].sel h2{color:var(--p-paper);text-shadow:0 0 22px rgba(216,163,95,.5);}
+  .cab[data-g="puppet"]:hover .tag,.cab[data-g="puppet"].sel .tag{color:var(--p-amber);}
+  .cab[data-g="puppet"]:hover .no,.cab[data-g="puppet"].sel .no{color:var(--p-amber);}
+  .cab[data-g="puppet"]:hover .go,.cab[data-g="puppet"].sel .go{opacity:1;transform:none;color:var(--p-amber);}
+
+  .cab:hover svg.poster,.cab.sel svg.poster{opacity:1;transform:translateX(-6px);}
+  .cab:hover,.cab.sel{flex:1.45;}
+
+  /* 选中项的呼吸框 */
+  .cab.sel::after{
+    content:"";position:absolute;inset:0;pointer-events:none;
+    box-shadow:inset 0 0 0 1px rgba(232,238,251,.22);
+    animation:pulse 2.2s ease-in-out infinite;
+  }
+  @keyframes pulse{0%,100%{opacity:.35}50%{opacity:1}}
+
+  /* ===== 底部提示条 ===== */
+  #foot{
+    flex:none;height:38px;display:flex;align-items:center;justify-content:center;gap:26px;
+    border-top:1px solid var(--line);font-family:var(--mono);
+    font-size:11px;letter-spacing:2px;color:var(--txt-dim);background:var(--void-2);
+  }
+  #foot kbd{
+    font-family:inherit;border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;
+    padding:1px 6px;margin-right:5px;color:var(--txt);background:rgba(160,180,220,.06);
+  }
+
+  /* ===== 海报 SVG 动效 ===== */
+  .flame{transform-origin:center bottom;transform-box:fill-box;animation:flick .38s ease-in-out infinite alternate;}
+  .flame.f2{animation-duration:.29s;animation-delay:.12s;}
+  @keyframes flick{from{transform:scaleY(1) scaleX(1)}to{transform:scaleY(1.14) scaleX(.93)}}
+  .snowd{animation:fall 3.4s linear infinite;}
+  .snowd.s2{animation-duration:4.6s;animation-delay:1.2s;}
+  .snowd.s3{animation-duration:2.8s;animation-delay:.6s;}
+  @keyframes fall{0%{transform:translateY(-6px);opacity:0}18%{opacity:1}88%{opacity:1}100%{transform:translateY(64px);opacity:0}}
+  .bug{animation:crawl 1.3s ease-in-out infinite alternate;}
+  .bug.b2{animation-duration:1s;animation-delay:.2s;}
+  .bug.b3{animation-duration:1.7s;animation-delay:.5s;}
+  .bug.b4{animation-duration:.85s;animation-delay:.35s;}
+  @keyframes crawl{from{transform:translate(0,0)}to{transform:translate(var(--dx,6px),var(--dy,-5px))}}
+  .pup{transform-origin:100px 8px;animation:sway 3.2s ease-in-out infinite alternate;}
+  @keyframes sway{from{transform:rotate(-4deg)}to{transform:rotate(4deg)}}
+
+  /* ===== 移动端 ===== */
+  @media (max-width:720px){
+    body{overflow:auto;}
+    #floor{flex:none;}
+    .cab{min-height:132px;padding:14px 0;}
+    .cab .no{width:52px;}
+    .cab svg.poster{height:70%;margin-right:14px;}
+    .cab .go{right:14px;bottom:10px;}
+    #head{padding:16px 18px 10px;}
+  }
+</style>
+</head>
+<body>
+
+<!-- 顶部跑马灯 -->
+<div id="marquee">
+  <span class="dot"></span>
+  <span class="track" id="mq"></span>
+</div>
+
+<!-- 大厅标题 -->
+<header id="head">
+  <h1>游戏厅<span class="en">GAME&nbsp;HUB</span></h1>
+  <div id="coin">INSERT&nbsp;COIN&nbsp;·&nbsp;点击任意机台开始</div>
+</header>
+
+<!-- 三台机台 -->
+<main id="floor">
+
+  <a class="cab" data-g="winter" data-i="0" href="./无尽冬日/无尽冬日·篝火营地.html">
+    <span class="no">01</span>
+    <div class="mid">
+      <h2>无尽冬日 · 篝火营地</h2>
+      <div class="tag"><span class="bar"></span>极寒生存 · 营地经营<span class="bar"></span></div>
+    </div>
+    <!-- 篝火 + 落雪 -->
+    <svg class="poster" viewBox="0 0 120 120" width="120" height="120" aria-hidden="true">
+      <g fill="#c9ddf6">
+        <circle class="snowd"    cx="18" cy="14" r="2.2"/>
+        <circle class="snowd s2" cx="44" cy="6"  r="1.6"/>
+        <circle class="snowd s3" cx="98" cy="18" r="2.6"/>
+        <circle class="snowd s2" cx="72" cy="10" r="1.4"/>
+      </g>
+      <g transform="translate(60 96)">
+        <rect x="-24" y="0" width="48" height="5" rx="2.5" fill="#3a2c22"/>
+        <rect x="-20" y="-5" width="40" height="5" rx="2.5" fill="#2c211a" transform="rotate(-6)"/>
+        <g transform="translate(0 -6)">
+          <path class="flame"    d="M0 0 C -14 -10 -12 -30 0 -44 C 12 -30 14 -10 0 0 Z" fill="#ff5e3a"/>
+          <path class="flame f2" d="M0 -2 C -8 -9 -7 -22 0 -31 C 7 -22 8 -9 0 -2 Z" fill="#ffc457"/>
+        </g>
+      </g>
+    </svg>
+    <span class="go">进入游戏 →</span>
+  </a>
+
+  <a class="cab" data-g="swarm" data-i="1" href="./虫巢穴突围/虫朝突围.html">
+    <span class="no">02</span>
+    <div class="mid">
+      <h2>虫潮突围</h2>
+      <div class="tag"><span class="bar"></span>弹幕射击 · 虫群激战<span class="bar"></span></div>
+    </div>
+    <!-- 虫群 -->
+    <svg class="poster" viewBox="0 0 120 120" width="120" height="120" aria-hidden="true">
+      <g fill="#2ec5ff">
+        <g class="bug"    style="--dx:8px;--dy:-6px"><ellipse cx="34" cy="40" rx="7" ry="5"/><circle cx="27" cy="38" r="2.4" fill="#7fe3ff"/></g>
+        <g class="bug b2" style="--dx:-6px;--dy:7px"><ellipse cx="66" cy="28" rx="6" ry="4.4"/><circle cx="60" cy="26" r="2.2" fill="#7fe3ff"/></g>
+        <g class="bug b3" style="--dx:7px;--dy:5px"><ellipse cx="88" cy="52" rx="8" ry="5.6"/><circle cx="80" cy="50" r="2.6" fill="#7fe3ff"/></g>
+        <g class="bug b4" style="--dx:-8px;--dy:-4px"><ellipse cx="52" cy="66" rx="5.4" ry="4"/><circle cx="46" cy="64" r="2" fill="#7fe3ff"/></g>
+        <g class="bug b2" style="--dx:5px;--dy:-8px"><ellipse cx="84" cy="82" rx="6.4" ry="4.6"/><circle cx="77" cy="80" r="2.3" fill="#7fe3ff"/></g>
+        <g class="bug b3" style="--dx:-5px;--dy:-6px"><ellipse cx="30" cy="88" rx="5.8" ry="4.2"/><circle cx="24" cy="86" r="2.1" fill="#7fe3ff"/></g>
+      </g>
+      <circle cx="60" cy="60" r="2.4" fill="#fff"/>
+    </svg>
+    <span class="go">进入游戏 →</span>
+  </a>
+
+  <a class="cab" data-g="puppet" data-i="2" href="./遗弃之地/遗弃之地.html">
+    <span class="no">03</span>
+    <div class="mid">
+      <h2>遗弃之地 · 皮影塔防</h2>
+      <div class="tag"><span class="bar"></span>符咒合成 · 剪影塔防<span class="bar"></span></div>
+    </div>
+    <!-- 悬丝傀儡 -->
+    <svg class="poster" viewBox="0 0 120 120" width="120" height="120" aria-hidden="true">
+      <g class="pup">
+        <line x1="100" y1="8" x2="60" y2="34" stroke="#d8a35f" stroke-width="1.4"/>
+        <line x1="100" y1="8" x2="86" y2="58" stroke="#d8a35f" stroke-width="1.4"/>
+        <line x1="100" y1="8" x2="44" y2="56" stroke="#d8a35f" stroke-width="1.4"/>
+        <circle cx="60" cy="28" r="8" fill="#d7d2c8"/>
+        <path d="M60 36 L 76 62 L 60 74 L 44 62 Z" fill="#d8a35f"/>
+        <path d="M46 60 L 34 76" stroke="#d7d2c8" stroke-width="4" stroke-linecap="round"/>
+        <path d="M74 60 L 86 76" stroke="#d7d2c8" stroke-width="4" stroke-linecap="round"/>
+      </g>
+      <circle cx="100" cy="8" r="3" fill="#ff9e3d"/>
+    </svg>
+    <span class="go">进入游戏 →</span>
+  </a>
+
+</main>
+
+<footer id="foot">
+  <span><kbd>↑</kbd><kbd>↓</kbd>选择机台</span>
+  <span><kbd>1</kbd><kbd>2</kbd><kbd>3</kbd>直达</span>
+  <span><kbd>Enter</kbd>开始游戏</span>
+</footer>
+
+<script>
+(function(){
+  "use strict";
+  /* 跑马灯文案 */
+  var items = "欢迎光临 · WELCOME TO THE ARCADE ★ 无尽冬日 · 篝火营地 — 极寒生存 ★ 虫潮突围 — 弹幕射击 ★ 遗弃之地 · 皮影塔防 — 符咒合成塔防 ★ ";
+  document.getElementById("mq").textContent = items + items;
+
+  var cabs = Array.prototype.slice.call(document.querySelectorAll(".cab"));
+  var idx = 0, timer = null, idleTimer = null;
+
+  function select(i, fromIdle){
+    idx = (i + cabs.length) % cabs.length;
+    cabs.forEach(function(c, k){ c.classList.toggle("sel", k === idx); });
+    if(!fromIdle) wake();
+  }
+  function open(){ window.location.href = cabs[idx].getAttribute("href"); }
+
+  /* 无人操作时进入 attract 模式：光标自动轮播 */
+  function attract(){
+    if(timer) return;
+    timer = setInterval(function(){ select(idx + 1, true); }, 2600);
+  }
+  function wake(){
+    if(timer){ clearInterval(timer); timer = null; }
+    if(idleTimer) clearTimeout(idleTimer);
+    idleTimer = setTimeout(attract, 6000);
+  }
+
+  cabs.forEach(function(c, k){
+    c.addEventListener("mouseenter", function(){ select(k); });
+    c.addEventListener("click", function(e){ e.preventDefault(); idx = k; open(); });
+  });
+
+  document.addEventListener("keydown", function(e){
+    var n = parseInt(e.key, 10);
+    if(n >= 1 && n <= 3){ select(n - 1); return; }
+    if(e.key === "ArrowDown" || e.key === "ArrowRight"){ select(idx + 1); e.preventDefault(); }
+    else if(e.key === "ArrowUp" || e.key === "ArrowLeft"){ select(idx - 1); e.preventDefault(); }
+    else if(e.key === "Enter" || e.key === " "){ open(); e.preventDefault(); }
+  });
+
+  select(0);
+  wake();
+})();
+</script>
+</body>
+</html>
