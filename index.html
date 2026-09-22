@@ -24,6 +24,8 @@
     --c0:#0a0e1a; --c1:#14294a; --c-cyan:#2ec5ff; --c-cyan2:#7fe3ff; --c-txt:#cfe7ff;
     /* 遗弃之地 · 皮影塔防 */
     --p0:#050808; --p1:#1a140c; --p-amber:#d8a35f; --p-paper:#d7d2c8; --p-orange:#ff9e3d;
+    /* 疯狂水世界 */
+    --a0:#0e1a35; --a1:#1c2a4a; --a-water:#4b8fe8; --a-foam:#7fd4e8; --a-gold:#f0c93f;
   }
   *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
   html,body{height:100%;}
@@ -125,6 +127,15 @@
   .cab[data-g="puppet"]:hover .no,.cab[data-g="puppet"].sel .no{color:var(--p-amber);}
   .cab[data-g="puppet"]:hover .go,.cab[data-g="puppet"].sel .go{opacity:1;transform:none;color:var(--p-amber);}
 
+  .cab[data-g="aqua"]:hover,.cab[data-g="aqua"].sel{
+    background:linear-gradient(90deg,var(--a0) 0%,var(--a1) 78%,transparent 100%);
+    box-shadow:inset 0 0 0 1px rgba(127,212,232,.3), inset 0 -30px 60px -40px var(--a-water);
+  }
+  .cab[data-g="aqua"]:hover h2,.cab[data-g="aqua"].sel h2{color:var(--a-foam);text-shadow:0 0 22px rgba(75,143,232,.6);}
+  .cab[data-g="aqua"]:hover .tag,.cab[data-g="aqua"].sel .tag{color:var(--a-gold);}
+  .cab[data-g="aqua"]:hover .no,.cab[data-g="aqua"].sel .no{color:var(--a-foam);}
+  .cab[data-g="aqua"]:hover .go,.cab[data-g="aqua"].sel .go{opacity:1;transform:none;color:var(--a-gold);}
+
   .cab:hover svg.poster,.cab.sel svg.poster{opacity:1;transform:translateX(-6px);}
   .cab:hover,.cab.sel{flex:1.45;}
 
@@ -162,6 +173,11 @@
   @keyframes crawl{from{transform:translate(0,0)}to{transform:translate(var(--dx,6px),var(--dy,-5px))}}
   .pup{transform-origin:100px 8px;animation:sway 3.2s ease-in-out infinite alternate;}
   @keyframes sway{from{transform:rotate(-4deg)}to{transform:rotate(4deg)}}
+  .wave{animation:drift 3.6s ease-in-out infinite alternate;}
+  .wave.w2{animation-duration:4.8s;animation-delay:.7s;}
+  @keyframes drift{from{transform:translateX(-5px)}to{transform:translateX(5px)}}
+  .fishy{animation:swim 2.6s ease-in-out infinite alternate;}
+  @keyframes swim{from{transform:translate(-6px,2px) rotate(-4deg)}to{transform:translate(8px,-3px) rotate(4deg)}}
 
   /* ===== 移动端 ===== */
   @media (max-width:720px){
@@ -261,11 +277,35 @@
     <span class="go">进入游戏 →</span>
   </a>
 
+  <a class="cab" data-g="aqua" data-i="3" href="./疯狂水世界/dist/index.html">
+    <span class="no">04</span>
+    <div class="mid">
+      <h2>疯狂水世界</h2>
+      <div class="tag"><span class="bar"></span>海岛生存 · 资源合成<span class="bar"></span></div>
+    </div>
+    <!-- 海浪 + 游鱼 -->
+    <svg class="poster" viewBox="0 0 120 120" width="120" height="120" aria-hidden="true">
+      <g class="fishy" transform="translate(56 34)">
+        <ellipse cx="0" cy="0" rx="11" ry="6" fill="#7fd4e8"/>
+        <path d="M10 0 L 19 -6 L 19 6 Z" fill="#4b8fe8"/>
+        <circle cx="-5" cy="-1.5" r="1.6" fill="#0e1a35"/>
+      </g>
+      <g class="wave" fill="none" stroke="#4b8fe8" stroke-width="3.4" stroke-linecap="round">
+        <path d="M12 72 Q 28 62 44 72 T 76 72 T 108 72"/>
+      </g>
+      <g class="wave w2" fill="none" stroke="#7fd4e8" stroke-width="3" stroke-linecap="round" opacity=".75">
+        <path d="M12 90 Q 28 80 44 90 T 76 90 T 108 90"/>
+      </g>
+      <circle cx="98" cy="20" r="4" fill="#f0c93f"/>
+    </svg>
+    <span class="go">进入游戏 →</span>
+  </a>
+
 </main>
 
 <footer id="foot">
   <span><kbd>↑</kbd><kbd>↓</kbd>选择机台</span>
-  <span><kbd>1</kbd><kbd>2</kbd><kbd>3</kbd>直达</span>
+  <span><kbd>1</kbd><kbd>2</kbd><kbd>3</kbd><kbd>4</kbd>直达</span>
   <span><kbd>Enter</kbd>开始游戏</span>
 </footer>
 
@@ -273,7 +313,7 @@
 (function(){
   "use strict";
   /* 跑马灯文案 */
-  var items = "欢迎光临 · WELCOME TO THE ARCADE ★ 无尽冬日 · 篝火营地 — 极寒生存 ★ 虫潮突围 — 弹幕射击 ★ 遗弃之地 · 皮影塔防 — 符咒合成塔防 ★ ";
+  var items = "欢迎光临 · WELCOME TO THE ARCADE ★ 无尽冬日 · 篝火营地 — 极寒生存 ★ 虫潮突围 — 弹幕射击 ★ 遗弃之地 · 皮影塔防 — 符咒合成塔防 ★ 疯狂水世界 — 海岛生存 · 资源合成 ★ ";
   document.getElementById("mq").textContent = items + items;
 
   var cabs = Array.prototype.slice.call(document.querySelectorAll(".cab"));
@@ -304,7 +344,7 @@
 
   document.addEventListener("keydown", function(e){
     var n = parseInt(e.key, 10);
-    if(n >= 1 && n <= 3){ select(n - 1); return; }
+    if(n >= 1 && n <= 4){ select(n - 1); return; }
     if(e.key === "ArrowDown" || e.key === "ArrowRight"){ select(idx + 1); e.preventDefault(); }
     else if(e.key === "ArrowUp" || e.key === "ArrowLeft"){ select(idx - 1); e.preventDefault(); }
     else if(e.key === "Enter" || e.key === " "){ open(); e.preventDefault(); }
