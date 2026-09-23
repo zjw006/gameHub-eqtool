@@ -26,6 +26,10 @@
     --p0:#050808; --p1:#1a140c; --p-amber:#d8a35f; --p-paper:#d7d2c8; --p-orange:#ff9e3d;
     /* 疯狂水世界 */
     --a0:#0e1a35; --a1:#1c2a4a; --a-water:#4b8fe8; --a-foam:#7fd4e8; --a-gold:#f0c93f;
+    /* 援军来了 · 肉鸽塔防 */
+    --r0:#0d1208; --r1:#1a2410; --r-amber:#e8b04d; --r-green:#7cc94f; --r-steel:#6cc5e8;
+    /* 生存33天 · 末日生存 */
+    --s0:#0e0a06; --s1:#1f1610; --s-rust:#c9714a; --s-sick:#8fb85c; --s-ash:#d4c9b8;
   }
   *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
   html,body{height:100%;}
@@ -66,7 +70,7 @@
   }
   @keyframes blink{to{visibility:hidden}}
 
-  /* ===== 三台机台：三条色带 ===== */
+  /* ===== 六台机台：六条色带 ===== */
   #floor{flex:1;display:flex;flex-direction:column;min-height:0;}
   .cab{
     position:relative;flex:1;min-height:0;display:flex;align-items:center;
@@ -136,6 +140,24 @@
   .cab[data-g="aqua"]:hover .no,.cab[data-g="aqua"].sel .no{color:var(--a-foam);}
   .cab[data-g="aqua"]:hover .go,.cab[data-g="aqua"].sel .go{opacity:1;transform:none;color:var(--a-gold);}
 
+  .cab[data-g="reinforce"]:hover,.cab[data-g="reinforce"].sel{
+    background:linear-gradient(90deg,var(--r0) 0%,var(--r1) 78%,transparent 100%);
+    box-shadow:inset 0 0 0 1px rgba(232,176,77,.32), inset 0 -30px 60px -40px var(--r-amber);
+  }
+  .cab[data-g="reinforce"]:hover h2,.cab[data-g="reinforce"].sel h2{color:var(--r-amber);text-shadow:0 0 22px rgba(232,176,77,.55);}
+  .cab[data-g="reinforce"]:hover .tag,.cab[data-g="reinforce"].sel .tag{color:var(--r-green);}
+  .cab[data-g="reinforce"]:hover .no,.cab[data-g="reinforce"].sel .no{color:var(--r-steel);}
+  .cab[data-g="reinforce"]:hover .go,.cab[data-g="reinforce"].sel .go{opacity:1;transform:none;color:var(--r-amber);}
+
+  .cab[data-g="survive"]:hover,.cab[data-g="survive"].sel{
+    background:linear-gradient(90deg,var(--s0) 0%,var(--s1) 78%,transparent 100%);
+    box-shadow:inset 0 0 0 1px rgba(201,113,74,.32), inset 0 -30px 60px -40px var(--s-rust);
+  }
+  .cab[data-g="survive"]:hover h2,.cab[data-g="survive"].sel h2{color:var(--s-ash);text-shadow:0 0 22px rgba(212,201,184,.5);}
+  .cab[data-g="survive"]:hover .tag,.cab[data-g="survive"].sel .tag{color:var(--s-rust);}
+  .cab[data-g="survive"]:hover .no,.cab[data-g="survive"].sel .no{color:var(--s-sick);}
+  .cab[data-g="survive"]:hover .go,.cab[data-g="survive"].sel .go{opacity:1;transform:none;color:var(--s-rust);}
+
   .cab:hover svg.poster,.cab.sel svg.poster{opacity:1;transform:translateX(-6px);}
   .cab:hover,.cab.sel{flex:1.45;}
 
@@ -179,6 +201,24 @@
   .fishy{animation:swim 2.6s ease-in-out infinite alternate;}
   @keyframes swim{from{transform:translate(-6px,2px) rotate(-4deg)}to{transform:translate(8px,-3px) rotate(4deg)}}
 
+  /* 援军来了 · 城墙脉动 + 准星扫描 */
+  .rwall{transform-origin:center bottom;transform-box:fill-box;animation:pulseWall 3s ease-in-out infinite;}
+  @keyframes pulseWall{0%,100%{opacity:.65}50%{opacity:1}}
+  .crosshair{transform-origin:center;transform-box:fill-box;animation:scan 2.4s ease-in-out infinite alternate;}
+  @keyframes scan{from{transform:scale(.88) rotate(0deg)}to{transform:scale(1.12) rotate(45deg)}}
+  .rbeam{transform-origin:center bottom;transform-box:fill-box;animation:beamGlow 1.8s ease-in-out infinite alternate;}
+  @keyframes beamGlow{from{opacity:.3}to{opacity:.9}}
+
+  /* 生存33天 · 废墟摇曳 + 碎石坠落 + 骷髅闪烁 */
+  .ruin{transform-origin:center bottom;transform-box:fill-box;animation:swaySlow 4.5s ease-in-out infinite alternate;}
+  @keyframes swaySlow{from{transform:rotate(-1deg)}to{transform:rotate(1deg)}}
+  .debris{animation:fallDebris 4s linear infinite;}
+  .debris.d2{animation-duration:5.2s;animation-delay:1.4s;}
+  .debris.d3{animation-duration:3.4s;animation-delay:.8s;}
+  @keyframes fallDebris{0%{transform:translateY(-8px);opacity:0}15%{opacity:.7}85%{opacity:.7}100%{transform:translateY(72px);opacity:0}}
+  .skullglow{animation:skullPulse 2.8s ease-in-out infinite;}
+  @keyframes skullPulse{0%,100%{opacity:.55}50%{opacity:1}}
+
   /* ===== 移动端 ===== */
   @media (max-width:720px){
     body{overflow:auto;}
@@ -205,7 +245,7 @@
   <div id="coin">INSERT&nbsp;COIN&nbsp;·&nbsp;点击任意机台开始</div>
 </header>
 
-<!-- 三台机台 -->
+<!-- 六台机台 -->
 <main id="floor">
 
   <a class="cab" data-g="winter" data-i="0" href="./无尽冬日/无尽冬日·篝火营地.html">
@@ -301,11 +341,72 @@
     <span class="go">进入游戏 →</span>
   </a>
 
+  <a class="cab" data-g="reinforce" data-i="4" href="./援军来了/dist/index.html">
+    <span class="no">05</span>
+    <div class="mid">
+      <h2>援军来了</h2>
+      <div class="tag"><span class="bar"></span>肉鸽塔防 · 城墙守卫<span class="bar"></span></div>
+    </div>
+    <!-- 盾牌 + 准星 -->
+    <svg class="poster" viewBox="0 0 120 120" width="120" height="120" aria-hidden="true">
+      <g class="rwall">
+        <path d="M60 18 L 90 30 L 90 54 Q 90 80 60 98 Q 30 80 30 54 L 30 30 Z" fill="none" stroke="#e8b04d" stroke-width="2.5"/>
+        <path d="M60 24 L 84 33 L 84 52 Q 84 74 60 90 Q 36 74 36 52 L 36 33 Z" fill="#e8b04d" opacity=".1"/>
+      </g>
+      <g class="crosshair" transform="translate(60 48)">
+        <circle cx="0" cy="0" r="14" fill="none" stroke="#6cc5e8" stroke-width="1.5" opacity=".8"/>
+        <line x1="-20" y1="0" x2="-8" y2="0" stroke="#6cc5e8" stroke-width="1.5"/>
+        <line x1="8" y1="0" x2="20" y2="0" stroke="#6cc5e8" stroke-width="1.5"/>
+        <line x1="0" y1="-20" x2="0" y2="-8" stroke="#6cc5e8" stroke-width="1.5"/>
+        <line x1="0" y1="8" x2="0" y2="20" stroke="#6cc5e8" stroke-width="1.5"/>
+        <circle cx="0" cy="0" r="2" fill="#6cc5e8"/>
+      </g>
+      <g fill="#7cc94f">
+        <circle cx="50" cy="76" r="1.8"/>
+        <circle cx="60" cy="76" r="1.8"/>
+        <circle cx="70" cy="76" r="1.8"/>
+      </g>
+    </svg>
+    <span class="go">进入游戏 →</span>
+  </a>
+
+  <a class="cab" data-g="survive" data-i="5" href="./生存33天/dist/index.html">
+    <span class="no">06</span>
+    <div class="mid">
+      <h2>生存33天</h2>
+      <div class="tag"><span class="bar"></span>末日生存 · 33天坚守<span class="bar"></span></div>
+    </div>
+    <!-- 废墟 + 骷髅 -->
+    <svg class="poster" viewBox="0 0 120 120" width="120" height="120" aria-hidden="true">
+      <g class="ruin">
+        <path d="M24 88 L 24 52 L 34 42 L 44 52 L 44 88 Z" fill="#1f1610" stroke="#c9714a" stroke-width="1.5"/>
+        <rect x="29" y="58" width="5" height="7" fill="#0e0a06"/>
+        <path d="M56 88 L 56 38 L 66 32 L 76 38 L 76 88 Z" fill="#1f1610" stroke="#c9714a" stroke-width="1.5" opacity=".85"/>
+        <rect x="62" y="48" width="4" height="6" fill="#0e0a06"/>
+        <path d="M86 88 L 86 56 L 94 50 L 100 56 L 100 88 Z" fill="#1f1610" stroke="#c9714a" stroke-width="1.5" opacity=".7"/>
+      </g>
+      <g class="skullglow" transform="translate(60 22)">
+        <circle cx="0" cy="0" r="9" fill="#d4c9b8" opacity=".75"/>
+        <ellipse cx="-3.5" cy="-1.5" rx="2.2" ry="2.8" fill="#0e0a06"/>
+        <ellipse cx="3.5" cy="-1.5" rx="2.2" ry="2.8" fill="#0e0a06"/>
+        <rect x="-3" y="3" width="6" height="3" rx="1" fill="#0e0a06"/>
+        <rect x="-2" y="6" width="1.5" height="3" fill="#d4c9b8" opacity=".5"/>
+        <rect x="0.5" y="6" width="1.5" height="3" fill="#d4c9b8" opacity=".5"/>
+      </g>
+      <g fill="#c9714a" opacity=".5">
+        <rect class="debris" x="18" y="8" width="2" height="3"/>
+        <rect class="debris d2" x="96" y="12" width="2.5" height="2"/>
+        <rect class="debris d3" x="50" y="4" width="1.8" height="2.5"/>
+      </g>
+    </svg>
+    <span class="go">进入游戏 →</span>
+  </a>
+
 </main>
 
 <footer id="foot">
   <span><kbd>↑</kbd><kbd>↓</kbd>选择机台</span>
-  <span><kbd>1</kbd><kbd>2</kbd><kbd>3</kbd><kbd>4</kbd>直达</span>
+  <span><kbd>1</kbd><kbd>2</kbd><kbd>3</kbd><kbd>4</kbd><kbd>5</kbd><kbd>6</kbd>直达</span>
   <span><kbd>Enter</kbd>开始游戏</span>
 </footer>
 
@@ -313,7 +414,7 @@
 (function(){
   "use strict";
   /* 跑马灯文案 */
-  var items = "欢迎光临 · WELCOME TO THE ARCADE ★ 无尽冬日 · 篝火营地 — 极寒生存 ★ 虫潮突围 — 弹幕射击 ★ 遗弃之地 · 皮影塔防 — 符咒合成塔防 ★ 疯狂水世界 — 海岛生存 · 资源合成 ★ ";
+  var items = "欢迎光临 · WELCOME TO THE ARCADE ★ 无尽冬日 · 篝火营地 — 极寒生存 ★ 虫潮突围 — 弹幕射击 ★ 遗弃之地 · 皮影塔防 — 符咒合成塔防 ★ 疯狂水世界 — 海岛生存 · 资源合成 ★ 援军来了 — 肉鸽塔防 · 城墙守卫 ★ 生存33天 — 末日生存 · 33天坚守 ★ ";
   document.getElementById("mq").textContent = items + items;
 
   var cabs = Array.prototype.slice.call(document.querySelectorAll(".cab"));
@@ -344,7 +445,7 @@
 
   document.addEventListener("keydown", function(e){
     var n = parseInt(e.key, 10);
-    if(n >= 1 && n <= 4){ select(n - 1); return; }
+    if(n >= 1 && n <= 6){ select(n - 1); return; }
     if(e.key === "ArrowDown" || e.key === "ArrowRight"){ select(idx + 1); e.preventDefault(); }
     else if(e.key === "ArrowUp" || e.key === "ArrowLeft"){ select(idx - 1); e.preventDefault(); }
     else if(e.key === "Enter" || e.key === " "){ open(); e.preventDefault(); }

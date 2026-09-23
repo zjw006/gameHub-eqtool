@@ -1,0 +1,845 @@
+{
+  "game_name": "援军来了",
+  "core_loop": "部署兵种→抵御怪物波次→波次间隙三选一肉鸽技能→继续下一波；城墙耐久归零本局失败，通关获取资源，局外养成兵种装备，开启新一局",
+  "game_rhythm": [
+    {
+      "stage": "前期 波次1~5",
+      "goal": "铺基础兵种，熟悉克制关系，稳住城墙血量",
+      "difficulty": "低，小怪为主，敌人种类单一"
+    },
+    {
+      "stage": "中期 波次6~12",
+      "goal": "搭配多属性兵种，应对混合敌人与飞行单位",
+      "difficulty": "中，机械/装甲/生化混合刷新，精英怪增多"
+    },
+    {
+      "stage": "后期 波次13+ BOSS波",
+      "goal": "成型兵种羁绊+全局技能，保护城墙击杀BOSS",
+      "difficulty": "高，BOSS高额伤害，快速摧毁城墙"
+    }
+  ],
+  "wall_defense": {
+    "desc": "城墙耐久为本局唯一生命，怪物接触城墙扣除耐久；耐久归零直接失败，部分技能可修复城墙"
+  },
+  "soldier_system": {
+    "damage_type": [
+      {
+        "type_id": "D01",
+        "type_name": "弹道",
+        "bonus_target": "机械",
+        "penalty_target": "装甲",
+        "bonus_rate": 0.3,
+        "penalty_rate": -0.3,
+        "soldier_list": [
+          {
+            "soldier_id": "S001",
+            "name": "突击步兵",
+            "feature": "均衡输出，上阵召唤援军"
+          },
+          {
+            "soldier_id": "S002",
+            "name": "机枪手",
+            "feature": "高攻速，清理小怪，保护城墙"
+          },
+          {
+            "soldier_id": "S003",
+            "name": "狙击手",
+            "feature": "超远射程，重伤减速，支持对空"
+          }
+        ]
+      },
+      {
+        "type_id": "D02",
+        "type_name": "爆炸",
+        "bonus_target": "装甲",
+        "penalty_target": "生化",
+        "bonus_rate": 0.3,
+        "penalty_rate": -0.3,
+        "soldier_list": [
+          {
+            "soldier_id": "S004",
+            "name": "火箭兵",
+            "feature": "对地+对空，范围爆炸，泛用强"
+          },
+          {
+            "soldier_id": "S005",
+            "name": "坦克兵",
+            "feature": "高破甲，前排抗伤"
+          },
+          {
+            "soldier_id": "S006",
+            "name": "榴弹炮",
+            "feature": "大范围震荡眩晕，填弹慢，无法对空"
+          }
+        ]
+      },
+      {
+        "type_id": "D03",
+        "type_name": "能量",
+        "bonus_target": "生化",
+        "penalty_target": "机械",
+        "bonus_rate": 0.3,
+        "penalty_rate": -0.3,
+        "soldier_list": [
+          {
+            "soldier_id": "S007",
+            "name": "迫击炮",
+            "feature": "大范围能量伤害，生化怪特化"
+          },
+          {
+            "soldier_id": "S008",
+            "name": "电磁炮",
+            "feature": "连锁闪电麻痹多目标，支持对空"
+          },
+          {
+            "soldier_id": "S009",
+            "name": "机甲兵",
+            "feature": "近距离大范围AOE，破盾能力强"
+          }
+        ]
+      }
+    ],
+    "synergy_rule": "同类型兵种同时上阵触发协同增益；例如侦察机标记后全队远程增伤",
+    "permanent_develop": [
+      "兵种升级",
+      "升星",
+      "装备",
+      "装备洗练",
+      "兵种专属技能卡"
+    ],
+    "equip_affix": [
+      "属性伤害加成",
+      "对BOSS伤害",
+      "暴击率",
+      "破甲",
+      "攻击百分比"
+    ]
+  },
+  "roguelike_skill_system": {
+    "desc": "每波战斗结束，三选一随机技能，一局内叠加生效；分为全局技能、兵种专属技能",
+    "global_skill_example": [
+      "全队攻击提升",
+      "全队攻速提升",
+      "城墙修复",
+      "援军来了(增加上阵槽位)",
+      "全队减伤",
+      "临时召唤援军"
+    ],
+    "soldier_skill_example": [
+      "机枪手子弹扩容",
+      "榴弹炮子母弹",
+      "电磁炮强力电流"
+    ],
+    "global_skill_ref": [
+      "RG001",
+      "RG002",
+      "RG003",
+      "RG004",
+      "RG005",
+      "RG006",
+      "RG007",
+      "RG008"
+    ],
+    "soldier_skill_ref": [
+      "RG009",
+      "RG010",
+      "RG011",
+      "RG012",
+      "RG013",
+      "RG014",
+      "RG015",
+      "RG016"
+    ],
+    "note": "技能明细以 roguelike_skill_list 为准，原 global_skill_example / soldier_skill_example 保留作概念说明"
+  },
+  "enemy_system": {
+    "enemy_category": [
+      {
+        "name": "机械单位",
+        "feature": "高护盾，弹道伤害+30%"
+      },
+      {
+        "name": "装甲单位",
+        "feature": "高护甲，爆炸伤害+30%"
+      },
+      {
+        "name": "生化变异单位",
+        "feature": "高血量，能量伤害+30%"
+      }
+    ],
+    "enemy_rank": [
+      "普通怪",
+      "精英怪",
+      "BOSS"
+    ],
+    "boss_feature": [
+      "大范围AOE",
+      "城墙破甲",
+      "群体debuff"
+    ],
+    "air_unit": true
+  },
+  "resource": {
+    "develop_resource": [
+      "兵种经验",
+      "兵种碎片",
+      "装备",
+      "装备洗练材料"
+    ],
+    "source": [
+      "关卡通关奖励",
+      "每日任务",
+      "成就任务",
+      "限时活动"
+    ]
+  },
+  "task_system": {
+    "desc": "包含主线、每日、周任务、成就；内置任务红点、悬浮提示、弹窗引导，统一提示优先级逻辑",
+    "reset_rule": {
+      "daily_reset_time": "00:00",
+      "weekly_reset_time": "周一00:00",
+      "main_task": "一次性，不可重置，顺序解锁",
+      "achievement": "永久一次性，达成条件自动触发领取入口"
+    },
+    "task_category": [
+      {
+        "category_id": "T001",
+        "category_name": "主线任务",
+        "unlock_base_level": 1,
+        "task_type": "一次性",
+        "task_example": [
+          {
+            "name": "完成第3波防守",
+            "reward": {
+              "兵种碎片": 20,
+              "金币": 150
+            }
+          },
+          {
+            "name": "解锁榴弹炮",
+            "reward": {
+              "兵种碎片": 30,
+              "高级强化材料": 2
+            }
+          },
+          {
+            "name": "击败机械霸主BOSS",
+            "reward": {
+              "传说兵种碎片": 50,
+              "装备宝箱": 1
+            }
+          }
+        ],
+        "reward_pool": [
+          "金币",
+          "兵种碎片",
+          "装备宝箱",
+          "养成材料",
+          "解锁新兵种"
+        ],
+        "logic": "线性顺序解锁，必须完成上一个主线才能接取下一个；驱动关卡与兵种解锁"
+      },
+      {
+        "category_id": "T002",
+        "category_name": "每日任务",
+        "unlock_base_level": 1,
+        "task_type": "每日重置",
+        "max_daily_task_count": 5,
+        "task_example": [
+          {
+            "name": "完成2局对局",
+            "reward": {
+              "金币": 120,
+              "普通碎片": 10
+            }
+          },
+          {
+            "name": "使用机枪手击杀100敌人",
+            "reward": {
+              "金币": 150,
+              "强化材料": 1
+            }
+          },
+          {
+            "name": "一局内选取3个肉鸽强化技能",
+            "reward": {
+              "金币": 200,
+              "装备洗练石": 2
+            }
+          }
+        ],
+        "reward_pool": [
+          "金币",
+          "兵种碎片",
+          "强化材料",
+          "洗练石"
+        ],
+        "logic": "每日刷新一组任务，完成全部5个可领取额外每日宝箱奖励"
+      },
+      {
+        "category_id": "T003",
+        "category_name": "周任务",
+        "unlock_base_level": 5,
+        "task_type": "每周重置",
+        "max_weekly_task_count": 4,
+        "task_example": [
+          {
+            "name": "累计通关BOSS关卡3次",
+            "reward": {
+              "传说兵种碎片": 30,
+              "高级洗练石": 5
+            }
+          },
+          {
+            "name": "累计击败1000个敌人",
+            "reward": {
+              "金币": 800,
+              "装备宝箱": 2
+            }
+          }
+        ],
+        "reward_pool": [
+          "金币",
+          "高阶兵种碎片",
+          "高级装备材料",
+          "装备宝箱"
+        ],
+        "logic": "长线周期目标，奖励价值高于每日任务"
+      },
+      {
+        "category_id": "T004",
+        "category_name": "成就任务",
+        "unlock_base_level": 1,
+        "task_type": "永久一次性",
+        "group": [
+          "防守成就",
+          "兵种养成成就",
+          "击杀成就",
+          "肉鸽技能成就"
+        ],
+        "task_example": [
+          {
+            "name": "单局成功守住20波",
+            "reward": {
+              "金币": 1000,
+              "传说碎片": 20
+            }
+          },
+          {
+            "name": "将任意兵种升星到4星",
+            "reward": {
+              "金币": 1200,
+              "稀有装备宝箱": 1
+            }
+          }
+        ],
+        "reward_pool": [
+          "金币",
+          "稀有兵种碎片",
+          "高品质装备",
+          "高级洗练材料"
+        ],
+        "logic": "里程碑触发，达成条件自动开放领取，无需手动接取"
+      }
+    ],
+    "task_tip_logic": {
+      "desc": "任务红点、悬浮提示、弹窗引导、跳转逻辑，按优先级驱动引导",
+      "priority_rule": [
+        "主线任务 > 可领取奖励任务 > 每日任务 > 周任务 > 成就"
+      ],
+      "red_dot": {
+        "enable": true,
+        "trigger_condition": [
+          "任务奖励可领取",
+          "新主线任务解锁",
+          "成就达成待领取"
+        ],
+        "position": [
+          "任务主入口图标",
+          "对应任务子标签页"
+        ]
+      },
+      "float_tip": {
+        "enable": true,
+        "trigger_condition": "返回主界面，存在高优先级待完成任务",
+        "display_content": "简短一句话任务目标，附带【前往】跳转按钮",
+        "jump_target": "自动跳转到对局/兵种/装备页面"
+      },
+      "pop_tip": {
+        "enable": true,
+        "trigger_condition": "完成前置主线，解锁新系统/新兵种",
+        "limit": "同类弹窗仅首次触发，重复进入不再弹出"
+      },
+      "progress_tip": {
+        "desc": "任务面板进度文本展示",
+        "format": "当前进度 / 目标数量；资源类任务显示背包持有数量",
+        "state_text": {
+          "not_accept": "未接取",
+          "ongoing": "进行中",
+          "finished_wait_claim": "待领取",
+          "claimed": "已完成",
+          "expired": "已过期"
+        }
+      },
+      "lock_tip": {
+        "trigger_condition": "任务锁定（关卡/等级不足）",
+        "display": "条目置灰，悬浮提示解锁条件"
+      }
+    }
+  },
+  "soldier_skill_list": [
+    {
+      "skill_id": "SOL001",
+      "skill_category": "兵种固有技能",
+      "name": "紧急增援",
+      "owner_soldier_id": "S001",
+      "owner_soldier_name": "突击步兵",
+      "release_mode": "自动触发，上阵时立即释放",
+      "effect": "召唤2名临时突击步兵协助作战，持续20秒；临时单位无局外养成加成",
+      "visual_effect": "空降烟尘，两名步兵落地生成",
+      "special_rule": "单局仅可触发1次"
+    },
+    {
+      "skill_id": "SOL002",
+      "skill_category": "兵种固有技能",
+      "name": "持续扫射",
+      "owner_soldier_id": "S002",
+      "owner_soldier_name": "机枪手",
+      "release_mode": "自动持续释放，范围内存在敌人启动",
+      "effect": "持续扫射，攻击间隔降低，对群体小怪伤害提升20%；远距离目标伤害衰减",
+      "visual_effect": "枪口持续火光，弹道密集白色子弹线",
+      "special_rule": "被近身时射速小幅下降"
+    },
+    {
+      "skill_id": "SOL003",
+      "skill_category": "兵种固有技能",
+      "name": "精准狙击",
+      "owner_soldier_id": "S003",
+      "owner_soldier_name": "狙击手",
+      "release_mode": "自动锁定最远目标，每5秒释放一次",
+      "effect": "高额单体伤害，命中目标附加【重伤】，移速降低30%，持续3秒；可命中飞行单位",
+      "visual_effect": "红色瞄准线，命中后目标身上暗红色标记",
+      "special_rule": "无法攻击贴身近距离敌人"
+    },
+    {
+      "skill_id": "SOL004",
+      "skill_category": "兵种固有技能",
+      "name": "破甲火箭弹",
+      "owner_soldier_id": "S004",
+      "owner_soldier_name": "火箭兵",
+      "release_mode": "自动循环释放",
+      "effect": "爆炸范围伤害，对空对地均可；命中敌人降低护甲15%，持续4秒",
+      "visual_effect": "火箭尾焰，落地橙红爆炸火球",
+      "special_rule": "对集群敌人收益极高"
+    },
+    {
+      "skill_id": "SOL005",
+      "skill_category": "兵种固有技能",
+      "name": "重装护盾",
+      "owner_soldier_id": "S005",
+      "owner_soldier_name": "坦克兵",
+      "release_mode": "被动常驻，血量低于50%自动强化",
+      "effect": "自身护甲提升40%，嘲讽周围敌方单位，吸引怪物攻击自身",
+      "visual_effect": "坦克外壳亮起黄色护盾光效",
+      "special_rule": "前排承伤核心，无法嘲讽BOSS"
+    },
+    {
+      "skill_id": "SOL006",
+      "skill_category": "兵种固有技能",
+      "name": "震荡榴弹",
+      "owner_soldier_id": "S006",
+      "owner_soldier_name": "榴弹炮",
+      "release_mode": "自动循环释放，填弹存在间隔",
+      "effect": "大范围震荡爆炸，范围内敌人眩晕1.2秒；无法锁定空中单位",
+      "visual_effect": "土黄色冲击波向外扩散",
+      "special_rule": "填弹冷却较长，单体伤害偏低，强群体控制"
+    },
+    {
+      "skill_id": "SOL007",
+      "skill_category": "兵种固有技能",
+      "name": "能量迫击炮",
+      "owner_soldier_id": "S007",
+      "owner_soldier_name": "迫击炮",
+      "release_mode": "自动循环释放，抛物线弹道",
+      "effect": "大范围能量伤害，对生化单位额外增伤30%",
+      "visual_effect": "淡紫色能量落地炸开，大范围能量波纹",
+      "special_rule": "弹道飞行时间存在延迟，移动目标容易躲避"
+    },
+    {
+      "skill_id": "SOL008",
+      "skill_category": "兵种固有技能",
+      "name": "连锁闪雷",
+      "owner_soldier_id": "S008",
+      "owner_soldier_name": "电磁炮",
+      "release_mode": "自动循环释放",
+      "effect": "闪电在敌人之间连锁传递，麻痹目标0.8秒，可对空；每多传递一个目标伤害衰减15%",
+      "visual_effect": "蓝白色闪电链式连接多个敌人",
+      "special_rule": "目标数量越多收益越高"
+    },
+    {
+      "skill_id": "SOL009",
+      "skill_category": "兵种固有技能",
+      "name": "能量冲击",
+      "owner_soldier_id": "S009",
+      "owner_soldier_name": "机甲兵",
+      "release_mode": "近战范围内存在敌人自动触发",
+      "effect": "近距离范围能量AOE，击碎敌方护盾，对护盾目标额外增伤25%",
+      "visual_effect": "机甲周身爆发青色能量冲击波",
+      "special_rule": "近战单位，攻击距离很短"
+    }
+  ],
+  "monster_list": [
+    {
+      "monster_id": "M001",
+      "monster_category": "机械单位",
+      "name": "机械侦察兵",
+      "rank": "普通",
+      "attribute": "机械",
+      "hp_coeff": 1.0,
+      "armor": 5,
+      "shield": 30,
+      "move_speed": 1.2,
+      "skill_list": [
+        {
+          "skill_id": "MON001",
+          "name": "脉冲射击",
+          "release_mode": "自动远程攻击",
+          "effect": "单体脉冲伤害，无特殊附加效果",
+          "visual_effect": "淡蓝色脉冲弹"
+        }
+      ],
+      "weak": "弹道伤害",
+      "resist": "能量伤害"
+    },
+    {
+      "monster_id": "M002",
+      "monster_category": "机械单位",
+      "name": "机械守卫",
+      "rank": "精英",
+      "attribute": "机械",
+      "hp_coeff": 2.2,
+      "armor": 12,
+      "shield": 80,
+      "move_speed": 0.7,
+      "skill_list": [
+        {
+          "skill_id": "MON002",
+          "name": "护盾脉冲",
+          "release_mode": "护盾存在时，每8秒释放一次",
+          "effect": "周围小型脉冲冲击波，小幅击退我方兵种",
+          "visual_effect": "一圈蓝色脉冲向外扩散"
+        }
+      ],
+      "weak": "弹道伤害",
+      "resist": "能量伤害"
+    },
+    {
+      "monster_id": "M003",
+      "monster_category": "装甲单位",
+      "name": "装甲步兵",
+      "rank": "普通",
+      "attribute": "装甲",
+      "hp_coeff": 1.4,
+      "armor": 25,
+      "shield": 0,
+      "move_speed": 0.8,
+      "skill_list": [
+        {
+          "skill_id": "MON003",
+          "name": "重锤冲击",
+          "release_mode": "到达近战范围自动释放",
+          "effect": "近战高额物理伤害",
+          "visual_effect": "灰色重锤砸地"
+        }
+      ],
+      "weak": "爆炸伤害",
+      "resist": "弹道伤害"
+    },
+    {
+      "monster_id": "M004",
+      "monster_category": "装甲单位",
+      "name": "重型坦克",
+      "rank": "精英",
+      "attribute": "装甲",
+      "hp_coeff": 3.5,
+      "armor": 45,
+      "shield": 0,
+      "move_speed": 0.4,
+      "skill_list": [
+        {
+          "skill_id": "MON004",
+          "name": "主炮轰击",
+          "release_mode": "每6秒远程炮击",
+          "effect": "范围爆炸伤害，命中降低我方兵种移速",
+          "visual_effect": "黑色炮弹落地爆炸"
+        }
+      ],
+      "weak": "爆炸伤害",
+      "resist": "弹道伤害"
+    },
+    {
+      "monster_id": "M005",
+      "monster_category": "生化变异单位",
+      "name": "变异感染者",
+      "rank": "普通",
+      "attribute": "生化",
+      "hp_coeff": 1.6,
+      "armor": 8,
+      "shield": 0,
+      "move_speed": 1.4,
+      "skill_list": [
+        {
+          "skill_id": "MON005",
+          "name": "病毒撕咬",
+          "release_mode": "近战自动释放",
+          "effect": "攻击附带病毒debuff，持续少量掉血",
+          "visual_effect": "绿色毒雾"
+        }
+      ],
+      "weak": "能量伤害",
+      "resist": "爆炸伤害"
+    },
+    {
+      "monster_id": "M006",
+      "monster_category": "生化变异单位",
+      "name": "畸变巨兽",
+      "rank": "精英",
+      "attribute": "生化",
+      "hp_coeff": 4.2,
+      "armor": 14,
+      "shield": 0,
+      "move_speed": 0.6,
+      "skill_list": [
+        {
+          "skill_id": "MON006",
+          "name": "毒雾喷射",
+          "release_mode": "每7秒向前扇形喷射",
+          "effect": "扇形持续毒区域，持续伤害+降低我方攻击力",
+          "visual_effect": "大面积绿色毒雾"
+        }
+      ],
+      "weak": "能量伤害",
+      "resist": "爆炸伤害"
+    },
+    {
+      "monster_id": "M007",
+      "monster_category": "BOSS",
+      "name": "机械霸主",
+      "rank": "BOSS",
+      "attribute": "机械",
+      "hp_coeff": 12,
+      "armor": 20,
+      "shield": 200,
+      "move_speed": 0.5,
+      "skill_list": [
+        {
+          "skill_id": "MON007",
+          "name": "全域炮火",
+          "release_mode": "每12秒释放",
+          "effect": "大范围多段炮击，可直接对城墙造成大量耐久伤害",
+          "visual_effect": "多枚导弹从天落下，连续爆炸火光"
+        },
+        {
+          "skill_id": "MON008",
+          "name": "护盾充能",
+          "release_mode": "护盾耗尽前，血量低于40%触发一次",
+          "effect": "恢复部分护盾值，短暂减伤",
+          "visual_effect": "全身蓝色护盾快速填充"
+        }
+      ],
+      "weak": "弹道伤害",
+      "resist": "能量伤害"
+    },
+    {
+      "monster_id": "M008",
+      "monster_category": "BOSS",
+      "name": "生化母体",
+      "rank": "BOSS",
+      "attribute": "生化",
+      "hp_coeff": 14,
+      "armor": 10,
+      "shield": 0,
+      "move_speed": 0.7,
+      "skill_list": [
+        {
+          "skill_id": "MON009",
+          "name": "孵化小怪",
+          "release_mode": "每10秒释放",
+          "effect": "原地孵化3只变异感染者",
+          "visual_effect": "绿色肉瘤爆开生成小怪"
+        },
+        {
+          "skill_id": "MON010",
+          "name": "腐蚀冲击",
+          "release_mode": "近战范围释放",
+          "effect": "高额腐蚀伤害，直接削减城墙耐久",
+          "visual_effect": "墨绿色腐蚀冲击波"
+        }
+      ],
+      "weak": "能量伤害",
+      "resist": "爆炸伤害"
+    }
+  ],
+  "roguelike_skill_list": [
+    {
+      "skill_id": "RG001",
+      "skill_category": "全局强化",
+      "name": "全军猛攻",
+      "release_mode": "选择后永久本局生效，被动常驻",
+      "effect": "所有兵种攻击力+12%，可多次叠加",
+      "visual_effect": "战场所有兵种身上短暂闪过红色光晕",
+      "special_rule": "无上限叠加，每次选择增量固定"
+    },
+    {
+      "skill_id": "RG002",
+      "skill_category": "全局强化",
+      "name": "急速装填",
+      "release_mode": "选择后永久本局生效，被动常驻",
+      "effect": "所有兵种攻击速度+10%，可多次叠加",
+      "visual_effect": "兵种武器闪过白色流光",
+      "special_rule": "榴弹炮、迫击炮填弹间隔同步缩短"
+    },
+    {
+      "skill_id": "RG003",
+      "skill_category": "全局强化",
+      "name": "钢铁壁垒",
+      "release_mode": "选择后永久本局生效，被动常驻",
+      "effect": "所有兵种受到伤害-10%，城墙耐久上限+8%，可多次叠加",
+      "visual_effect": "全体兵种与城墙浮现淡金色护罩",
+      "special_rule": "对BOSS高额破甲伤害衰减效果降低"
+    },
+    {
+      "skill_id": "RG004",
+      "skill_category": "全局强化",
+      "name": "快速维修",
+      "release_mode": "选择瞬间立即触发，一次性效果",
+      "effect": "立刻修复城墙20%最大耐久值",
+      "visual_effect": "城墙裂痕发光，砖石快速复原",
+      "special_rule": "单局可多次选取，每次独立生效"
+    },
+    {
+      "skill_id": "RG005",
+      "skill_category": "全局强化",
+      "name": "援军来了",
+      "release_mode": "选择后永久本局生效，被动常驻",
+      "effect": "上阵兵种槽位+1，解锁额外部署位置",
+      "visual_effect": "部署区域新增一处绿色放置点位标记",
+      "special_rule": "本局最多获取2次，不可无限叠加槽位"
+    },
+    {
+      "skill_id": "RG006",
+      "skill_category": "全局强化",
+      "name": "标记锁定",
+      "release_mode": "选择后永久本局生效，被动常驻",
+      "effect": "所有兵种攻击命中敌人附加标记，被标记目标受到全部伤害+15%",
+      "visual_effect": "敌人身上出现红色锁定标记",
+      "special_rule": "飞行单位同样可以被标记"
+    },
+    {
+      "skill_id": "RG007",
+      "skill_category": "全局强化",
+      "name": "临时空投",
+      "release_mode": "选择瞬间立即触发，一次性效果",
+      "effect": "空降3名临时突击步兵，持续25秒，无局外养成加成",
+      "visual_effect": "运输机掠过，落地烟尘生成临时单位",
+      "special_rule": "临时单位阵亡后不会再次生成"
+    },
+    {
+      "skill_id": "RG008",
+      "skill_category": "全局强化",
+      "name": "破甲弹药",
+      "release_mode": "选择后永久本局生效，被动常驻",
+      "effect": "所有兵种攻击忽略目标15%护甲与护盾，可叠加",
+      "visual_effect": "子弹、炮弹命中处出现黑色破甲特效",
+      "special_rule": "对装甲单位收益更高"
+    },
+    {
+      "skill_id": "RG009",
+      "skill_category": "兵种专属强化",
+      "name": "子弹扩容",
+      "target_soldier_id": "S002",
+      "target_soldier_name": "机枪手",
+      "release_mode": "选择后永久本局生效，被动常驻",
+      "effect": "机枪手攻击范围扩大，群体伤害额外+20%，过热惩罚降低",
+      "visual_effect": "机枪弹链加长，弹道范围加宽",
+      "special_rule": "仅对机枪手生效，可重复选取叠加"
+    },
+    {
+      "skill_id": "RG010",
+      "skill_category": "兵种专属强化",
+      "name": "子母榴弹",
+      "target_soldier_id": "S006",
+      "target_soldier_name": "榴弹炮",
+      "release_mode": "选择后永久本局生效，被动常驻",
+      "effect": "榴弹爆炸后分裂2枚小子弹，二次爆炸造成小范围伤害，眩晕时长+0.4s",
+      "visual_effect": "主爆炸后再次弹出小型土黄色爆炸",
+      "special_rule": "依旧无法攻击空中单位"
+    },
+    {
+      "skill_id": "RG011",
+      "skill_category": "兵种专属强化",
+      "name": "强电流",
+      "target_soldier_id": "S008",
+      "target_soldier_name": "电磁炮",
+      "release_mode": "选择后永久本局生效，被动常驻",
+      "effect": "闪电传递不再衰减伤害，麻痹时间+0.3秒，连锁目标数量+1",
+      "visual_effect": "蓝白色闪电变粗，传导速度加快",
+      "special_rule": "群体怪多的时候收益爆炸"
+    },
+    {
+      "skill_id": "RG012",
+      "skill_category": "兵种专属强化",
+      "name": "穿甲狙击弹",
+      "target_soldier_id": "S003",
+      "target_soldier_name": "狙击手",
+      "release_mode": "选择后永久本局生效，被动常驻",
+      "effect": "狙击伤害+30%，重伤debuff持续时间+2秒，命中可穿透一名敌人",
+      "visual_effect": "红色瞄准线变粗，命中爆发强光",
+      "special_rule": "穿透伤害减半"
+    },
+    {
+      "skill_id": "RG013",
+      "skill_category": "兵种专属强化",
+      "name": "多联火箭巢",
+      "target_soldier_id": "S004",
+      "target_soldier_name": "火箭兵",
+      "release_mode": "选择后永久本局生效，被动常驻",
+      "effect": "一次发射2枚火箭弹，爆炸范围增大，破甲效果提升至25%",
+      "visual_effect": "双火箭尾焰，落地双重爆炸",
+      "special_rule": "冷却时间小幅增加"
+    },
+    {
+      "skill_id": "RG014",
+      "skill_category": "兵种专属强化",
+      "name": "重装加固",
+      "target_soldier_id": "S005",
+      "target_soldier_name": "坦克兵",
+      "release_mode": "选择后永久本局生效，被动常驻",
+      "effect": "自身护甲+30%，嘲讽范围扩大，护盾触发阈值提升至血量60%",
+      "visual_effect": "坦克外壳黄色护盾更厚重",
+      "special_rule": "移动速度降低0.15"
+    },
+    {
+      "skill_id": "RG015",
+      "skill_category": "兵种专属强化",
+      "name": "能量扩散弹",
+      "target_soldier_id": "S007",
+      "target_soldier_name": "迫击炮",
+      "release_mode": "选择后永久本局生效，被动常驻",
+      "effect": "爆炸范围扩大，对生化单位额外增伤20%，爆炸留下持续能量区域",
+      "visual_effect": "紫色能量爆炸，地面残留持续淡紫能量雾",
+      "special_rule": "弹道延迟不变"
+    },
+    {
+      "skill_id": "RG016",
+      "skill_category": "兵种专属强化",
+      "name": "能量过载",
+      "target_soldier_id": "S009",
+      "target_soldier_name": "机甲兵",
+      "release_mode": "选择后永久本局生效，被动常驻",
+      "effect": "能量冲击范围扩大，破盾增伤提升至40%，击杀敌人短暂回能",
+      "visual_effect": "青色冲击波范围扩大",
+      "special_rule": "攻击间隔小幅变长"
+    }
+  ]
+}
